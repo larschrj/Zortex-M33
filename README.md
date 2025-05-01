@@ -21,7 +21,7 @@ Using OpenOCD
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg -c "program zig-out/bin/blinky.elf reset ext"
 ```
 
-### Debug using GDB
+### Flash and debug using GDB
 Start OpenOCD
 ```
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg
@@ -31,4 +31,3 @@ In another terminal
 ```
 arm-none-eabi-gdb zig-out/bin/blinky.elf
 ```
-Note GDB may use the ```.gdbinit``` file depending on your GDB config. In which case blinky.elf will be flashed to the board by the ```load``` command in ```.gdbinit```.
