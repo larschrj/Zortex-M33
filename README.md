@@ -1,5 +1,5 @@
 # Zortex-M33
-Minimal bare metal Zig for Arm Cortex-M33 (STM32U585AI/B-U585I-IOT02A).
+Minimal bare metal Zig for Arm Cortex-M33 using STM32U585AI on the B-U585I-IOT02A board.
 
 Inspired by and builds on the [embedded_zig](https://github.com/tralamazza/embedded_zig) project.
 
@@ -15,13 +15,13 @@ zig build
 ```
 Example .elf files are placed in ```zig-out/bin/```.
 
-### Flash blinky.elf to B-U585I-IOT02A board
+### Flash blinky example to board
 Using OpenOCD
 ```
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg -c "program zig-out/bin/blinky.elf reset ext"
 ```
 
-### Flash and debug using GDB
+### Flash and debug blinky example using GDB
 Start OpenOCD
 ```
 openocd -f interface/stlink.cfg -f target/stm32u5x.cfg
