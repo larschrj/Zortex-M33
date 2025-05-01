@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     };
     const target = b.resolveTargetQuery(query);
 
-    // register maps and cortex-m4 functions
+    // register maps and cortex-m33 functions
     const stm32u585xx = b.addModule("stm32u585xx ", .{
         .root_source_file = b.path("./src/stm32u585xx.zig"),
         .target = target,
