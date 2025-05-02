@@ -1,5 +1,5 @@
 # Zortex-M33
-Minimal bare metal Zig for Arm Cortex-M33 using STM32U585AI on the B-U585I-IOT02A board.
+Minimal bare metal Zig for Arm Cortex-M33 using [STM32U585AI](https://www.st.com/en/microcontrollers-microprocessors/stm32u585ai.html) on the [B-U585I-IOT02A](https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html) board.
 
 Inspired by and builds on the [embedded_zig](https://github.com/tralamazza/embedded_zig) project.
 
