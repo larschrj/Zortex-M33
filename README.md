@@ -18,7 +18,7 @@ Example .elf files are placed in ```zig-out/bin/```.
 ### Flash blinky example to board
 Using OpenOCD
 ```
-openocd -f interface/stlink.cfg -f target/stm32u5x.cfg -c "program zig-out/bin/blinky.elf reset ext"
+openocd -f interface/stlink.cfg -f target/stm32u5x.cfg -c "program zig-out/bin/blinky.elf reset exit"
 ```
 
 ### Flash and debug blinky example using GDB
