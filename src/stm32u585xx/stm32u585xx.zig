@@ -1,4 +1,4 @@
-pub const core_cm33 = @import("core_cm33.zig");
+pub const core_cm33 = @import("core_cm33");
 pub const rcc = @import("rcc.zig");
 pub const pwr = @import("pwr.zig");
 pub const gpio = @import("gpio.zig");

@@ -19,13 +19,29 @@ pub fn build(b: *std.Build) void {
     };
     const target = b.resolveTargetQuery(query);
 
-    // register maps and cortex-m33 functions
+    // stm32u585xx cortex-m33 functions and peripherals
+    const irq_stm32u585xx = b.addModule("irq", .{
+        .root_source_file = b.path("./src/stm32u585xx/irq.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+    });
+
+    const core_cm33_stm32u585xx = b.addModule("core_cm33", .{
+        .root_source_file = b.path("./src/core_cm33.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+    });
+    core_cm33_stm32u585xx.addImport("irq", irq_stm32u585xx);
+
     const stm32u585xx = b.addModule("stm32u585xx ", .{
         .root_source_file = b.path("./src/stm32u585xx/stm32u585xx.zig"),
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
     });
+    stm32u585xx.addImport("core_cm33", core_cm33_stm32u585xx);
 
     // blinky
     var blinkyRootModule = b.createModule(.{

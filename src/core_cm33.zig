@@ -1,7 +1,6 @@
 const std = @import("std");
-const stm32u585xx = @import("stm32u585xx");
-pub const Irq = @import("irq.zig").Irq;
-pub const ExceptionNumber = @import("irq.zig").ExceptionNumber;
+pub const Irq = @import("irq").Irq;
+pub const ExceptionNumber = @import("irq").ExceptionNumber;
 
 const Apsr = packed struct(u32) {
     _reserved0: u16, // bit: 0..15 Reserved
