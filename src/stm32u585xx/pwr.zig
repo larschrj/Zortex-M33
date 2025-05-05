@@ -1,4 +1,4 @@
-const pwr_t = packed struct {
+const Pwr = packed struct {
     cr1: u32, // Power control register 1 Address offset: 0x00 */
     cr2: u32, // Power control register 2 Address offset: 0x04 */
     cr3: u32, // Power control register 3 Address offset: 0x08 */
@@ -43,4 +43,4 @@ const pwr_t = packed struct {
 };
 
 const pwr_base = 0x46020800;
-const pwr: *volatile pwr_t = @ptrFromInt(pwr_base);
+pub const pwr: *volatile Pwr = @ptrFromInt(pwr_base);

@@ -1,12 +1,15 @@
 const core_cm33 = @import("stm32u585xx").core_cm33;
 const rcc = @import("stm32u585xx").rcc.rcc;
-const gpio = @import("stm32u585xx").gpio;
+const cordic = @import("stm32u585xx").cordic;
+
+export const x: i16 = 0x4000; // 0.5 q1.15 format
+export const m: i16 = 0x4000; // 0.5 q1.15 format
+export var ret: cordic.Cordic.SinCosReturn = undefined;
 
 pub fn main() void {
     core_cm33.enableIrq();
     clockConfig();
-    gpioConfig();
-    sysTickConfig();
+    ret = cordic.cordic.sinCos(x, m);
 
     while (true) {}
 }
@@ -34,25 +37,5 @@ fn clockConfig() void {
     // systick clock = hclk/8 = 500 kHz
     rcc.ccipr1.systicksel = .hclkdiv8;
 
-    rcc.ahb2enr1.gpiohen = .enable;
-}
-
-fn gpioConfig() void {
-    gpio.gpioh.moder.p6 = .output;
-    gpio.gpioh.otyper.p6 = .push_pull;
-    gpio.gpioh.pupdr.p6 = .no_pullup_pulldown;
-    gpio.gpioh.odr.p6 = 0b0;
-
-    gpio.gpioh.moder.p7 = .output;
-    gpio.gpioh.otyper.p7 = .push_pull;
-    gpio.gpioh.pupdr.p7 = .no_pullup_pulldown;
-    gpio.gpioh.odr.p7 = 0b1;
-}
-
-fn sysTickConfig() void {
-    core_cm33.systick.load = 499_999;
-    core_cm33.systick.val = 499_999;
-    core_cm33.systick.ctrl.clkSource = .ahbDivide8;
-    core_cm33.systick.ctrl.tickInt = .exceptionReqEnable;
-    core_cm33.systick.ctrl.enable = .enable;
+    rcc.ahb1enr.cordicen = .enable;
 }

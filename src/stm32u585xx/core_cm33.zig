@@ -1,8 +1,9 @@
 const std = @import("std");
-pub const irq_t = @import("stm32u585xx_irq.zig").irq_t;
-pub const exceptionNumber_t = @import("stm32u585xx_irq.zig").exceptionNumber_t;
+const stm32u585xx = @import("stm32u585xx");
+pub const Irq = @import("irq.zig").Irq;
+pub const ExceptionNumber = @import("irq.zig").ExceptionNumber;
 
-const apsr_t = packed struct(u32) {
+const Apsr = packed struct(u32) {
     _reserved0: u16, // bit: 0..15 Reserved
     ge: u4, // bit: Greater than or Equal flags
     _reserved1: u7, // bit: 20..26 Reserved
@@ -13,12 +14,12 @@ const apsr_t = packed struct(u32) {
     n: u1, // bit: 31 Negative condition code flag
 };
 
-const ipsr_t = packed struct(u32) {
+const Ipsr = packed struct(u32) {
     isr: u9, // bit:  0.. 8  Exception number
     _reserved0: u23, // bit 9..31 Reserved
 };
 
-const xpsr_t = packed struct(u32) {
+const Xpsr = packed struct(u32) {
     isr: u9, // bit:  0.. 8  Exception number
     _reserved0: u7, // bit:  9..15  Reserved
     ge: u4, // bit: 16..19 Greater than or Equal flags
@@ -32,32 +33,32 @@ const xpsr_t = packed struct(u32) {
     n: u1, // bit: 31 Negative condition code flag
 };
 
-const control_t = packed struct(u32) {
-    npriv: npriv_t = .privileged, // bit: 0 Execution privilege in Thread mode
-    spsel: spsel_t = .msp, // bit: 1 Stack pointer select
-    fpca: fpca_t = .float_context_inactive, // bit: 2 Floating-point context active
-    sfpa: sfpa_t = .float_context_inactive, // bit: 3 Secure floating-point active
+const Control = packed struct(u32) {
+    npriv: Npriv = .privileged, // bit: 0 Execution privilege in Thread mode
+    spsel: Spsel = .msp, // bit: 1 Stack pointer select
+    fpca: Fpca = .float_context_inactive, // bit: 2 Floating-point context active
+    sfpa: Sfpa = .float_context_inactive, // bit: 3 Secure floating-point active
     _reserved0: u28 = 0, // bit 4..31 Reserved
 
-    pub const npriv_t = enum(u1) {
+    pub const Npriv = enum(u1) {
         privileged = 0,
         unprivileged = 1,
     };
 
-    pub const spsel_t = enum(u1) {
+    pub const Spsel = enum(u1) {
         msp = 0,
         psp = 1,
     };
 
-    pub const fpca_t = enum(u1) {
+    pub const Fpca = enum(u1) {
         float_context_inactive = 0,
         float_context_active = 1,
     };
 
-    pub const sfpa_t = fpca_t;
+    pub const Sfpa = Fpca;
 };
 
-const nvic_t = extern struct {
+const Nvic = extern struct {
     iser: [16]u32, // Offset: 0x000 (R/W)  Interrupt Set Enable Register */
     reserved0: [16]u32,
     icer: [16]u32, // Offset: 0x080 (R/W)  Interrupt Clear Enable Register */
@@ -75,20 +76,20 @@ const nvic_t = extern struct {
     stir: u32, // Offset: 0xE00 ( /W)  Software Trigger Interrupt Register */
 };
 
-const scb_t = extern struct {
+const Scb = extern struct {
     cpuid: u32, // Offset: 0x000 (R/ )  CPUID Base Register
-    icsr: icsr_t, // Offset: 0x004 (R/W)  Interrupt Control and State Register
+    icsr: Icsr, // Offset: 0x004 (R/W)  Interrupt Control and State Register
     vtor: u32, // Offset: 0x008 (R/W)  Vector Table Offset Register
-    aircr: aircr_t, // Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register
-    scr: scr_t, // Offset: 0x010 (R/W)  System Control Register
-    ccr: ccr_t, // Offset: 0x014 (R/W)  Configuration Control Register
+    aircr: Aircr, // Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register
+    scr: Scr, // Offset: 0x010 (R/W)  System Control Register
+    ccr: Ccr, // Offset: 0x014 (R/W)  Configuration Control Register
     shpr: [12]u8, // Offset: 0x018 (R/W)  System Handlers Priority Registers (4-7, 8-11, 12-15)
-    shcsr: shcsr_t, // Offset: 0x024 (R/W)  System Handler Control and State Register
-    cfsr: cfsr_t, // Offset: 0x028 (R/W)  Configurable Fault Status Register
-    hfsr: hfsr_t, // Offset: 0x02C (R/W)  HardFault Status Register
+    shcsr: Shcsr, // Offset: 0x024 (R/W)  System Handler Control and State Register
+    cfsr: Cfsr, // Offset: 0x028 (R/W)  Configurable Fault Status Register
+    hfsr: Hfsr, // Offset: 0x02C (R/W)  HardFault Status Register
     dfsr: u32, // Offset: 0x030 (R/W)  Debug Fault Status Register
-    mmfar: mmfar_t, // Offset: 0x034 (R/W)  MemManage Fault Address Register
-    bfar: bfar_t, // Offset: 0x038 (R/W)  BusFault Address Register
+    mmfar: Mmfar, // Offset: 0x034 (R/W)  MemManage Fault Address Register
+    bfar: Bfar, // Offset: 0x038 (R/W)  BusFault Address Register
     afsr: u32, // Offset: 0x03C (R/W)  Auxiliary Fault Status Register
     id_pfr: [2]u32, // Offset: 0x040 (R/ )  Processor Feature Register
     id_dfr: u32, // Offset: 0x048 (R/ )  Debug Feature Register
@@ -99,8 +100,8 @@ const scb_t = extern struct {
     ctr: u32, // Offset: 0x07C (R/ )  Cache Type register
     ccsidr: u32, // Offset: 0x080 (R/ )  Cache Size ID Register
     csselr: u32, // Offset: 0x084 (R/W)  Cache Size Selection Register
-    cpacr: cpacr_t, // Offset: 0x088 (R/W)  Coprocessor Access Control Register
-    nsacr: nsacr_t, // Offset: 0x08C (R/W)  Non-Secure Access Control Register
+    cpacr: Cpacr, // Offset: 0x088 (R/W)  Coprocessor Access Control Register
+    nsacr: Nsacr, // Offset: 0x08C (R/W)  Non-Secure Access Control Register
     reserved7: [21]u32,
     sfsr: u32, // Offset: 0x0E4 (R/W)  Secure Fault Status Register
     sfar: u32, // Offset: 0x0E8 (R/W)  Secure Fault Address Register
@@ -123,25 +124,25 @@ const scb_t = extern struct {
     dccisw: u32, // Offset: 0x274 ( /W)  D-Cache Clean and Invalidate by Set-way
     bpiall: u32, // Offset: 0x278 ( /W)  Branch Predictor Invalidate All
 
-    const icsr_t = packed struct(u32) {
-        vectActive: vectActive_t,
+    const Icsr = packed struct(u32) {
+        vectActive: VectActive,
         _reserved0: u2,
-        retToBase: retToBase_t,
-        vectPending: vectPending_t,
+        retToBase: RetToBase,
+        vectPending: VectPending,
         _reserved1: u1,
-        isrPending: isrPending_t,
+        isrPending: Isrpending,
         _reserved2: u2,
-        pendStClr: pendClr_t,
-        pendStSet: pendSet_t,
-        pendSvClr: pendClr_t,
-        pendSvSet: pendSet_t,
+        pendStClr: Pendclr,
+        pendStSet: Pendset,
+        pendSvClr: Pendclr,
+        pendSvSet: Pendset,
         _reserved3: u1,
-        pendNmiClr: pendClr_t,
-        pendNmiSet: pendSet_t,
+        pendNmiClr: Pendclr,
+        pendNmiSet: Pendset,
 
-        // create vectActive_t from exceptionNumber_t and add 0 value for thread_mode
-        const vectActive_t = blk: {
-            const enumTypeInfo = @typeInfo(exceptionNumber_t).@"enum";
+        // create Vectactive from Exceptionnumber and add 0 value for thread_mode
+        const VectActive = blk: {
+            const enumTypeInfo = @typeInfo(ExceptionNumber).@"enum";
             var newFields: [enumTypeInfo.fields.len + 1]std.builtin.Type.EnumField = undefined;
             for (enumTypeInfo.fields, 0..) |f, i| {
                 newFields[i] = .{ .name = f.name, .value = f.value + 16 };
@@ -151,14 +152,14 @@ const scb_t = extern struct {
             break :blk @Type(.{ .@"enum" = enumInfo });
         };
 
-        const retToBase_t = enum(u1) {
+        const RetToBase = enum(u1) {
             preemptedException = 0,
             noPreemptedException = 1,
         };
 
-        // create vectPending_t from exceptionNumber_t and add 0 value for no pending interrupt
-        const vectPending_t = blk: {
-            const enumTypeInfo = @typeInfo(exceptionNumber_t).@"enum";
+        // create Vectpending from Exceptionnumber and add 0 value for no pending interrupt
+        const VectPending = blk: {
+            const enumTypeInfo = @typeInfo(ExceptionNumber).@"enum";
             var newFields: [enumTypeInfo.fields.len + 1]std.builtin.Type.EnumField = undefined;
             for (enumTypeInfo.fields, 0..) |f, i| {
                 newFields[i] = .{ .name = f.name, .value = f.value + 16 };
@@ -168,41 +169,41 @@ const scb_t = extern struct {
             break :blk @Type(.{ .@"enum" = enumInfo });
         };
 
-        const isrPending_t = enum(u1) {
+        const Isrpending = enum(u1) {
             noPendingInterrupt = 0,
             pendingInterrupt = 1,
         };
 
-        const pendClr_t = enum(u1) {
+        const Pendclr = enum(u1) {
             clearPendingSysTick = 1,
         };
 
-        const pendSet_t = enum(u1) {
+        const Pendset = enum(u1) {
             noPendingInterrupt = 0,
             pendingInterrupt = 1,
         };
     };
 
-    const aircr_t = packed struct(u32) {
+    const Aircr = packed struct(u32) {
         _reserved0: u1,
         vectClrActive: u1,
-        sysResetReq: sysResetReq_t,
-        sysResetReqS: sysResetReqS_t,
+        sysResetReq: SysResetReq,
+        sysResetReqS: SysResetReqs,
         _reserved1: u4,
-        prigroup: prigroup_t,
+        prigroup: Prigroup,
         _reserved2: u2,
-        bfHfNmiNS: bfHfNmiNS_t,
-        pris: pris_t,
+        bfHfNmiNS: Bfhfnmins,
+        pris: Pris,
         endianess: u1,
         vectkey: u16,
 
-        const sysResetReq_t = enum(u1) {
+        const SysResetReq = enum(u1) {
             requestReset = 1,
         };
 
-        const sysResetReqS_t = sysResetReq_t;
+        const SysResetReqs = SysResetReq;
 
-        pub const prigroup_t = enum(u3) {
+        pub const Prigroup = enum(u3) {
             groupPrioBitWidth4 = 0b011,
             groupPrioBitWidth3 = 0b100,
             groupPrioBitWidth2 = 0b101,
@@ -210,54 +211,54 @@ const scb_t = extern struct {
             groupPrioBitWidth0 = 0b111,
         };
 
-        const bfHfNmiNS_t = enum(u1) {
+        const Bfhfnmins = enum(u1) {
             secure = 0,
             nonsecure = 1,
         };
 
-        const pris_t = enum(u1) {
+        const Pris = enum(u1) {
             equalPriority = 0,
             securePriority = 1,
         };
     };
 
-    const scr_t = packed struct(u32) {
+    const Scr = packed struct(u32) {
         _reserved0: u1,
-        sleepOnExit: sleepOnExit_t,
-        sleepDeep: sleepDeep_t,
-        sleepDeepS: sleepDeepS_t,
-        sevOnPend: sevOnPend_t,
+        sleepOnExit: Sleeponexit,
+        sleepDeep: Sleepdeep,
+        sleepDeepS: Sleepdeeps,
+        sevOnPend: Sevonpend,
         _reserved: u27,
 
-        const sleepOnExit_t = enum(u1) {
+        const Sleeponexit = enum(u1) {
             noSleepOnIsrReturn = 0,
             enterSleepOnIsrReturn = 1,
         };
 
-        const sleepDeep_t = enum(u1) {
+        const Sleepdeep = enum(u1) {
             sleepOnSleep = 0,
             deepSleepOnSleep = 1,
         };
 
-        const sleepDeepS_t = enum(u1) {
+        const Sleepdeeps = enum(u1) {
             nonSecureAccess = 0,
             secureAccess = 1,
         };
 
-        const sevOnPend_t = enum(u1) {
+        const Sevonpend = enum(u1) {
             wakeOnEnabledInterrupts = 0,
             wakeOnAllInterrupts = 1,
         };
     };
 
-    const ccr_t = packed struct(u32) {
+    const Ccr = packed struct(u32) {
         _reserved0: u1,
-        userSetMPend: userSetMPend_t,
+        userSetMPend: Usersetmpend,
         _reserved1: u1,
-        unAlign_trp: unAlign_trp_t,
-        div_0_trp: div_0_trp_t,
+        unAlign_trp: Unalign_trp,
+        div_0_trp: Div_0_trp,
         _reserved2: u3,
-        bfHfNmiGn: bfHfNmiGn_t,
+        bfHfNmiGn: Bfhfnmign,
         _reserved3: u1,
         stkOfHfNmiGn: u1,
         _reserved4: u5,
@@ -266,33 +267,33 @@ const scb_t = extern struct {
         bp: u1,
         _reserved5: u13,
 
-        const userSetMPend_t = enum(u1) {
+        const Usersetmpend = enum(u1) {
             privilegeStir = 0,
             unprivilegeStir = 1,
         };
 
-        const unAlign_trp_t = enum(u1) {
+        const Unalign_trp = enum(u1) {
             unAlignDisable = 0,
             unAlignEnable = 1,
         };
 
-        const div_0_trp_t = enum(u1) {
+        const Div_0_trp = enum(u1) {
             usageFaultDisable = 0,
             usageFaultEnable = 1,
         };
 
-        const bfHfNmiGn_t = enum(u1) {
+        const Bfhfnmign = enum(u1) {
             preciseIgnore = 0,
             preciseLessThanZero = 1,
         };
 
-        const stkOfHfNmiGn_t = enum(u1) {
+        const Stkofhfnmign = enum(u1) {
             stackLimitFaultAll = 0,
             stackLimitFaultGreaterThanZero = 1,
         };
     };
 
-    const shcsr_t = packed struct(u32) {
+    const Shcsr = packed struct(u32) {
         memFaultAct: u1,
         busFaultAct: u1,
         hardFaultAct: u1,
@@ -318,12 +319,12 @@ const scb_t = extern struct {
         _reserved2: u10,
     };
 
-    const cfsr_t = packed struct(u32) {
-        r: mmfsr_t, // memory management fault status register
-        bfsr: bfsr_t, // bus fault status register
-        ufsr: ufsr_t, // usage fault status register
+    const Cfsr = packed struct(u32) {
+        r: Mmfsr, // memory management fault status register
+        bfsr: Bfsr, // bus fault status register
+        ufsr: Ufsr, // usage fault status register
 
-        const mmfsr_t = packed struct(u8) {
+        const Mmfsr = packed struct(u8) {
             iaccViol: u1,
             daccViol: u1,
             _reserved0: u1,
@@ -334,7 +335,7 @@ const scb_t = extern struct {
             mmarValid: u1,
         };
 
-        const bfsr_t = packed struct(u8) {
+        const Bfsr = packed struct(u8) {
             ibusErr: u1,
             preciseErr: u1,
             _reserved0: u1,
@@ -345,7 +346,7 @@ const scb_t = extern struct {
             bfarValid: u1,
         };
 
-        const ufsr_t = packed struct(u16) {
+        const Ufsr = packed struct(u16) {
             undefInstr: u1,
             invState: u1,
             invPc: u1,
@@ -358,7 +359,7 @@ const scb_t = extern struct {
         };
     };
 
-    const hfsr_t = packed struct(u32) {
+    const Hfsr = packed struct(u32) {
         _reserved0: u1,
         vectTbl: u1,
         _reserved1: u28,
@@ -366,15 +367,15 @@ const scb_t = extern struct {
         debugEvt: u1,
     };
 
-    const mmfar_t = packed struct(u32) {
+    const Mmfar = packed struct(u32) {
         address: u32,
     };
 
-    const bfar_t = packed struct(u32) {
+    const Bfar = packed struct(u32) {
         address: u32,
     };
 
-    const cpacr_t = packed struct(u32) {
+    const Cpacr = packed struct(u32) {
         _reserved0: u20,
         cp10: coprocessor_access,
         cp11: coprocessor_access,
@@ -387,63 +388,63 @@ const scb_t = extern struct {
         };
     };
 
-    const nsacr_t = packed struct(u32) {
+    const Nsacr = packed struct(u32) {
         _reserved0: u10,
-        cp: cp_t,
+        cp: Cp,
         _reserved1: u20,
 
-        const cp_t = enum(u2) {
+        const Cp = enum(u2) {
             secure = 0b00,
             nonSecure = 0b11,
         };
     };
 };
 
-const scnscb_t = packed struct {
+const Scnscb = packed struct {
     _reserved0: u32,
     ictr: u32, // Offset: 0x004 (R/ )  Interrupt Controller Type Register
     actlr: u32, // Offset: 0x008 (R/W)  Auxiliary Control Register
     cppwr: u32, // Offset: 0x00C (R/W)  Coprocessor Power Control  Register
 };
 
-const systick_t = packed struct {
-    ctrl: ctrl_t,
+const Systick = packed struct {
+    ctrl: Ctrl,
     load: u24,
     _reserved0: u8,
     val: u24,
     _reserved1: u8,
-    calib: calib_t,
+    calib: Calib,
 
-    const ctrl_t = packed struct(u32) {
-        enable: enable_t,
-        tickInt: tickInt_t,
-        clkSource: clkSource_t,
+    const Ctrl = packed struct(u32) {
+        enable: Enable,
+        tickInt: Tickint,
+        clkSource: Clksource,
         _reserve0: u13,
-        countFlag: countFlag_t,
+        countFlag: Countflag,
         _reserve1: u15,
 
-        const enable_t = enum(u1) {
+        const Enable = enum(u1) {
             disable = 0,
             enable = 1,
         };
 
-        const tickInt_t = enum(u1) {
+        const Tickint = enum(u1) {
             exceptionReqDisable = 0,
             exceptionReqEnable = 1,
         };
 
-        const clkSource_t = enum(u1) {
+        const Clksource = enum(u1) {
             ahbDivide8 = 0,
             ahb = 1,
         };
 
-        const countFlag_t = enum(u1) {
+        const Countflag = enum(u1) {
             noReloadSinceLastRead = 0,
             reloadSinceLastRead = 1,
         };
     };
 
-    const calib_t = packed struct(u32) {
+    const Calib = packed struct(u32) {
         tenms: u24,
         _reserved0: u6,
         skew: u1,
@@ -451,7 +452,7 @@ const systick_t = packed struct {
     };
 };
 
-const mpu_t = packed struct {
+const Mpu = packed struct {
     type: u32, // Offset: 0x000 (R/ )  MPU Type Register */
     ctrl: u32, // Offset: 0x004 (R/W)  MPU Control Register */
     rnr: u32, // Offset: 0x008 (R/W)  MPU Region Number Register */
@@ -468,7 +469,7 @@ const mpu_t = packed struct {
     mair1: u32, // Offset: 0x034 (R/W)  MPU Memory Attribute Indirection Register 1 */
 };
 
-const sau_t = packed struct {
+const Sau = packed struct {
     ctrl: u32, // Offset: 0x000 (R/W)  SAU Control Register
     type: u32, // Offset: 0x004 (R/ )  SAU Type Register
     rnr: u32, // Offset: 0x008 (R/W)  SAU Region Number Register
@@ -478,7 +479,7 @@ const sau_t = packed struct {
     sfar: u32, // Offset: 0x018 (R/W)  Secure Fault Address Register
 };
 
-const fpu_t = packed struct {
+const Fpu = packed struct {
     _reserved0: u32,
     fpccr: u32, // Offset: 0x004 (R/W)  Floating-Point Context Control Register
     fpcar: u32, // Offset: 0x008 (R/W)  Floating-Point Context Address Register
@@ -488,14 +489,14 @@ const fpu_t = packed struct {
     mvfr2: u32, // Offset: 0x018 (R/ )  Media and VFP Feature Register 2
 };
 
-const priorityField_t = std.meta.Int(.unsigned, nvicPriorityBitSize);
-const priorityShift_t = std.math.Log2Int(priorityField_t);
-const priorityTypeMax: priorityField_t = std.math.maxInt(priorityField_t);
-const priorityEncodeShift_t = u3;
-const priorityEncodeShift: priorityEncodeShift_t = 8 - nvicPriorityBitSize;
-pub const priority_t = packed struct {
-    groupPriority: priorityField_t,
-    subPriority: priorityField_t,
+const PriorityField = std.meta.Int(.unsigned, nvicPriorityBitSize);
+const PriorityShift = std.math.Log2Int(PriorityField);
+const priorityTypeMax: PriorityField = std.math.maxInt(PriorityField);
+const Priorityencodeshift = u3;
+const priorityEncodeShift: Priorityencodeshift = 8 - nvicPriorityBitSize;
+pub const Priority = packed struct {
+    groupPriority: PriorityField,
+    subPriority: PriorityField,
 };
 
 const nvicPriorityBitSize: u4 = 4;
@@ -512,13 +513,13 @@ const mpu_base = scs_base + 0x0d90; // memory protection unit base address
 const sau_base = scs_base + 0x0dd0; // security attribution unit
 const fpu_base = scs_base + 0x0f30; // floating point unit base address
 
-pub const scnscb: *volatile scnscb_t = @ptrFromInt(scs_base);
-pub const scb: *volatile scb_t = @ptrFromInt(scb_base);
-pub const systick: *volatile systick_t = @ptrFromInt(systick_base);
-pub const nvic: *volatile nvic_t = @ptrFromInt(nvic_base);
-pub const mpu: *volatile mpu_t = @ptrFromInt(mpu_base);
-pub const sau: *volatile sau_t = @ptrFromInt(sau_base);
-pub const fpu: *volatile fpu_t = @ptrFromInt(fpu_base);
+pub const scnscb: *volatile Scnscb = @ptrFromInt(scs_base);
+pub const scb: *volatile Scb = @ptrFromInt(scb_base);
+pub const systick: *volatile Systick = @ptrFromInt(systick_base);
+pub const nvic: *volatile Nvic = @ptrFromInt(nvic_base);
+pub const mpu: *volatile Mpu = @ptrFromInt(mpu_base);
+pub const sau: *volatile Sau = @ptrFromInt(sau_base);
+pub const fpu: *volatile Fpu = @ptrFromInt(fpu_base);
 
 pub inline fn dsb() void {
     asm volatile ("dsb");
@@ -585,14 +586,14 @@ pub inline fn getPrimask() u32 {
     );
 }
 
-pub inline fn getControl() control_t {
+pub inline fn getControl() Control {
     return asm volatile (
         \\mrs %[ret], control
-        : [ret] "=r" (-> control_t),
+        : [ret] "=r" (-> Control),
     );
 }
 
-pub inline fn setControl(control: control_t) void {
+pub inline fn setControl(control: Control) void {
     asm volatile (
         \\msr control, %[control]
         \\isb
@@ -606,15 +607,15 @@ pub const irqError = error{
     negativeNvicIrq,
 };
 
-pub fn nvicSetPriorityGrouping(priorityGrouping: scb_t.aircr_t.prigroup_t) void {
+pub fn nvicSetPriorityGrouping(priorityGrouping: Scb.Aircr.Prigroup) void {
     scb.aircr.prigroup = priorityGrouping;
 }
 
-pub fn nvicGetPriorityGrouping() scb_t.aircr_t.prigroup_t {
+pub fn nvicGetPriorityGrouping() Scb.Aircr.Prigroup {
     return scb.aircr.prigroup;
 }
 
-pub fn nvicEnableIrq(irq: irq_t) irqError!void {
+pub fn nvicEnableIrq(irq: Irq) irqError!void {
     const irqValue = @intFromEnum(irq);
 
     if (irqValue < 0) {
@@ -627,7 +628,7 @@ pub fn nvicEnableIrq(irq: irq_t) irqError!void {
     }
 }
 
-pub fn nvicDisableIrq(irq: irq_t) irqError!void {
+pub fn nvicDisableIrq(irq: Irq) irqError!void {
     const irqValue = @intFromEnum(irq);
 
     if (irqValue < 0) {
@@ -640,7 +641,7 @@ pub fn nvicDisableIrq(irq: irq_t) irqError!void {
     }
 }
 
-pub fn nvicSetPriority(irq: irq_t, priorityEncoding: u8) irqError!void {
+pub fn nvicSetPriority(irq: Irq, priorityEncoding: u8) irqError!void {
     const irqNumber = @intFromEnum(irq);
     const priorityBits: u8 = @truncate(priorityEncoding << priorityEncodeShift);
     // core interrupt
@@ -657,7 +658,7 @@ pub fn nvicSetPriority(irq: irq_t, priorityEncoding: u8) irqError!void {
     }
 }
 
-pub fn nvicGetPriority(irq: irq_t) irqError!u8 {
+pub fn nvicGetPriority(irq: Irq) irqError!u8 {
     const irqNumber = @intFromEnum(irq);
     var priorityBits: u8 = undefined;
     // core interrupt
@@ -676,7 +677,7 @@ pub fn nvicGetPriority(irq: irq_t) irqError!u8 {
     return priorityEncoding;
 }
 
-pub fn nvicEncodePriority(priority: priority_t) u8 {
+pub fn nvicEncodePriority(priority: Priority) u8 {
     const groupPriorityBitSize: u4 = @as(u4, 7) -| @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1);
     const subPriorityBitSize: u4 = @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1) -| @as(u4, 3);
     var priorityEncoding: u8 = undefined;
@@ -690,24 +691,24 @@ pub fn nvicEncodePriority(priority: priority_t) u8 {
         const subPriority: u8 = @min(priority.subPriority, subPriorityMax);
         priorityEncoding = subPriority;
     } else {
-        const groupMaxShift: priorityShift_t = @truncate(nvicPriorityBitSize - groupPriorityBitSize);
-        const subMaxShift: priorityShift_t = @truncate(nvicPriorityBitSize - subPriorityBitSize);
+        const groupMaxShift: PriorityShift = @truncate(nvicPriorityBitSize - groupPriorityBitSize);
+        const subMaxShift: PriorityShift = @truncate(nvicPriorityBitSize - subPriorityBitSize);
         const groupPriorityMax = priorityTypeMax >> groupMaxShift;
         const subPriorityMax = priorityTypeMax >> subMaxShift;
         const groupPriority: u8 = @min(priority.groupPriority, groupPriorityMax);
         const subPriority: u8 = @min(priority.subPriority, subPriorityMax);
-        const encodeShift: priorityEncodeShift_t = @truncate(subPriorityBitSize);
+        const encodeShift: Priorityencodeshift = @truncate(subPriorityBitSize);
         priorityEncoding = (groupPriority << encodeShift) | subPriority;
     }
 
     return priorityEncoding;
 }
 
-pub fn nvicDecodePriority(priorityEncoding: priorityField_t) priority_t {
+pub fn nvicDecodePriority(priorityEncoding: PriorityField) Priority {
     const groupPriorityBitSize: u4 = @as(u4, 7) -| @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1);
     const subPriorityBitSize: u4 = @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1) -| @as(u4, 3);
 
-    var priority: priority_t = undefined;
+    var priority: Priority = undefined;
     if (groupPriorityBitSize == nvicPriorityBitSize) {
         priority.groupPriority = priorityEncoding;
         priority.subPriority = 0;
@@ -715,8 +716,8 @@ pub fn nvicDecodePriority(priorityEncoding: priorityField_t) priority_t {
         priority.groupPriority = 0;
         priority.subPriority = priorityEncoding;
     } else {
-        const subPriorityShift: priorityShift_t = subPriorityBitSize;
-        const subPriorityMask: priorityField_t = 0xff >> subPriorityShift;
+        const subPriorityShift: PriorityShift = subPriorityBitSize;
+        const subPriorityMask: PriorityField = 0xff >> subPriorityShift;
         priority.groupPriority = priorityEncoding >> subPriorityShift;
         priority.subPriority = priorityEncoding & subPriorityMask;
     }
@@ -731,9 +732,9 @@ fn vectActiveType(comptime enumType: type, comptime newTagType: type) type {
     return @Type(newEnumTypeInfo);
 }
 
-// Check prigroup_t values
+// Check Prigroup values
 comptime {
-    const prigroupTypeInfo = @typeInfo(scb_t.aircr_t.prigroup_t).@"enum";
+    const prigroupTypeInfo = @typeInfo(Scb.Aircr.Prigroup).@"enum";
     for (prigroupTypeInfo.fields) |field| {
         if (field.value < nvicPriorityBitSize - 1) {
             @compileError("Value of prigroup_t." ++ field.name ++ "less then nvicPriorityBitSize - 1");

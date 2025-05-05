@@ -21,7 +21,7 @@ pub fn build(b: *std.Build) void {
 
     // register maps and cortex-m33 functions
     const stm32u585xx = b.addModule("stm32u585xx ", .{
-        .root_source_file = b.path("./src/stm32u585xx.zig"),
+        .root_source_file = b.path("./src/stm32u585xx/stm32u585xx.zig"),
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
@@ -40,7 +40,24 @@ pub fn build(b: *std.Build) void {
         .root_module = blinkyRootModule,
     });
     blinkyExe.entry = .{ .symbol_name = "Reset_Handler" };
-    blinkyExe.setLinkerScript(b.path("./src/stm32u585aiixq_flash.ld"));
+    blinkyExe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
     b.default_step.dependOn(&blinkyExe.step);
     b.installArtifact(blinkyExe);
+
+    // cordic/sin
+    const cordicSinRootModule = b.createModule(.{
+        .root_source_file = b.path("./examples/cordic/sin/startup.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+    });
+    cordicSinRootModule.addImport("stm32u585xx", stm32u585xx);
+    const cordicSinExe = b.addExecutable(.{
+        .name = "cordicSin.elf",
+        .root_module = cordicSinRootModule,
+    });
+    cordicSinExe.entry = .{ .symbol_name = "Reset_Handler" };
+    cordicSinExe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
+    b.default_step.dependOn(&cordicSinExe.step);
+    b.installArtifact(cordicSinExe);
 }

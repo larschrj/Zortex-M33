@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const irq_t = enum(i16) {
+pub const Irq = enum(i16) {
     // Cortex-M4 Processor Exceptions Numbers
     NonMaskableInt_IRQn = -14, // 2 Non Maskable Interrupt
     HardFault_IRQn = -13, // 3 HardFault Interrupt
@@ -72,8 +72,8 @@ pub const irq_t = enum(i16) {
 };
 
 // exception numbers = irq numbers + 16
-pub const exceptionNumber_t = blk: {
-    const fields = std.meta.fields(irq_t);
+pub const ExceptionNumber = blk: {
+    const fields = std.meta.fields(Irq);
     var newFields: [fields.len]std.builtin.Type.EnumField = undefined;
     for (fields, 0..) |f, i| {
         newFields[i] = .{ .name = f.name, .value = f.value + 16 };
@@ -84,7 +84,7 @@ pub const exceptionNumber_t = blk: {
 
 // Check IRQ numbers
 comptime {
-    const irqTypeInfo = @typeInfo(irq_t).@"enum";
+    const irqTypeInfo = @typeInfo(Irq).@"enum";
     for (irqTypeInfo.fields) |field| {
         if (field.value > 239) {
             @compileError("Value of IRQ_t." ++ field.name ++ " exceeds 239");

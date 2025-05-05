@@ -20,7 +20,4 @@ export fn svcMain(sp: [*]u32) void {
     _ = svcNumber;
 }
 
-pub fn SysTick_Handler() callconv(.c) void {
-    gpio.gpioh.odr.p6 ^= 0b1;
-    gpio.gpioh.odr.p7 ^= 0b1;
-}
+pub fn SysTick_Handler() callconv(.c) void {}

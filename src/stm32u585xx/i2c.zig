@@ -1,18 +1,18 @@
-const i2c_t = packed struct {
-    cr1: cr1_t, // I2C Control register 1,            Address offset: 0x00
-    cr2: cr2_t, // I2C Control register 2,            Address offset: 0x04
-    oar1: oar1_t, // I2C Own address 1 register,        Address offset: 0x08
-    oar2: oar2_t, // I2C Own address 2 register,        Address offset: 0x0C
-    timingr: timingr_t, // I2C Timing register,               Address offset: 0x10
+const I2c = packed struct {
+    cr1: Cr1, // I2C Control register 1,            Address offset: 0x00
+    cr2: Cr2, // I2C Control register 2,            Address offset: 0x04
+    oar1: Oar1, // I2C Own address 1 register,        Address offset: 0x08
+    oar2: Oar2, // I2C Own address 2 register,        Address offset: 0x0C
+    timingr: Timingr, // I2C Timing register,               Address offset: 0x10
     timeotimeoutr_t: u32, // I2C Timeout register,              Address offset: 0x14
-    isr: isr_t, // I2C Interrupt and status register, Address offset: 0x18
-    icr: icr_t, // I2C Interrupt clear register,      Address offset: 0x1C
-    pecr: pecr_t, // I2C PEC register,                  Address offset: 0x20
-    rxdr: rxdr_t, // I2C Receive data register,         Address offset: 0x24
-    txdr: txdr_t, // I2C Transmit data register,        Address offset: 0x28
-    autocr: autocr_t,
+    isr: Isr, // I2C Interrupt and status register, Address offset: 0x18
+    icr: Icr, // I2C Interrupt clear register,      Address offset: 0x1C
+    pecr: Pecr, // I2C PEC register,                  Address offset: 0x20
+    rxdr: Rxdr, // I2C Receive data register,         Address offset: 0x24
+    txdr: Txdr, // I2C Transmit data register,        Address offset: 0x28
+    autocr: Autocr,
 
-    const cr1_t = packed struct(u32) {
+    const Cr1 = packed struct(u32) {
         pe: u1,
         txie: u1,
         rxie: u1,
@@ -40,7 +40,7 @@ const i2c_t = packed struct {
         stopfaclr: u1,
     };
 
-    const cr2_t = packed struct(u32) {
+    const Cr2 = packed struct(u32) {
         sadd: u10,
         rd_wrn: u1,
         add10: u1,
@@ -55,7 +55,7 @@ const i2c_t = packed struct {
         _reserved0: u5,
     };
 
-    const oar1_t = packed struct(u32) {
+    const Oar1 = packed struct(u32) {
         oa1: u10,
         oa1mode: u1,
         _reserved0: u4,
@@ -63,7 +63,7 @@ const i2c_t = packed struct {
         _reserved1: u16,
     };
 
-    const oar2_t = packed struct(u32) {
+    const Oar2 = packed struct(u32) {
         _reserved0: u1,
         oa2: u7,
         oa2msk: u3,
@@ -72,7 +72,7 @@ const i2c_t = packed struct {
         _reserved2: u16,
     };
 
-    const timingr_t = packed struct(u32) {
+    const Timingr = packed struct(u32) {
         scll: u8,
         sclh: u8,
         sdadel: u4,
@@ -81,7 +81,7 @@ const i2c_t = packed struct {
         presc: u4,
     };
 
-    const timeoutr_t = packed struct(u32) {
+    const Timeoutr = packed struct(u32) {
         timeouta: u12,
         tidle: u1,
         _reserved0: u2,
@@ -91,7 +91,7 @@ const i2c_t = packed struct {
         texten: u1,
     };
 
-    const isr_t = packed struct(u32) {
+    const Isr = packed struct(u32) {
         txe: u1,
         txis: u1,
         rxne: u1,
@@ -113,7 +113,7 @@ const i2c_t = packed struct {
         _reserved1: u8,
     };
 
-    const icr_t = packed struct(u32) {
+    const Icr = packed struct(u32) {
         _reserved0: u3,
         addrcf: u1,
         nackcf: u1,
@@ -127,22 +127,22 @@ const i2c_t = packed struct {
         _reserved2: u18,
     };
 
-    const pecr_t = packed struct(u32) {
+    const Pecr = packed struct(u32) {
         pec: u8,
         _reserved0: u24,
     };
 
-    const rxdr_t = packed struct(u32) {
+    const Rxdr = packed struct(u32) {
         rxdata: u8,
         _reserved0: u32,
     };
 
-    const txdr_t = packed struct(u32) {
+    const Txdr = packed struct(u32) {
         txdata: u8,
         _reserved0: u32,
     };
 
-    const autocr_t = packed struct(u32) {
+    const Autocr = packed struct(u32) {
         _reserved0: u6,
         tcdmaen: u1,
         tcrdmaen: u1,
@@ -158,7 +158,7 @@ const i2c1_base = 0x40005400;
 const i2c2_base = 0x40005800;
 const i2c3_base = 0x46002800;
 const i2c4_base = 0x40008400;
-pub const i2c1: *volatile i2c_t = @ptrFromInt(i2c1_base);
-pub const i2c2: *volatile i2c_t = @ptrFromInt(i2c2_base);
-pub const i2c3: *volatile i2c_t = @ptrFromInt(i2c3_base);
-pub const i2c4: *volatile i2c_t = @ptrFromInt(i2c4_base);
+pub const i2c1: *volatile I2c = @ptrFromInt(i2c1_base);
+pub const i2c2: *volatile I2c = @ptrFromInt(i2c2_base);
+pub const i2c3: *volatile I2c = @ptrFromInt(i2c3_base);
+pub const i2c4: *volatile I2c = @ptrFromInt(i2c4_base);
