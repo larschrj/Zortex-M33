@@ -1,4 +1,4 @@
-const gpio = @import("stm32u585xx").gpio;
+const gpioh = @import("stm32u585xx").gpioh;
 
 // SVC handler has to be split into an assembly only part and zig part
 // Any non assembly code in SVC_Handler will typically cause the stack pointer
@@ -21,6 +21,6 @@ export fn svcMain(sp: [*]u32) void {
 }
 
 pub fn SysTick_Handler() callconv(.c) void {
-    gpio.gpioh.odr.p6 ^= 0b1;
-    gpio.gpioh.odr.p7 ^= 0b1;
+    gpioh.odr.p6 ^= 0b1;
+    gpioh.odr.p7 ^= 0b1;
 }

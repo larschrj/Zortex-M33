@@ -90,36 +90,86 @@ pub const Cordic = packed struct {
         };
     };
 
-    const WriteRead16Bit = packed struct(u32) {
-        first: u16,
-        second: u16,
+    const ReadWrite2x16Bit = packed struct(u32) {
+        first: i16,
+        second: i16,
     };
 
-    pub const SinCosReturn = packed struct(u32) {
-        sin: i16,
-        cos: i16,
+    pub const CosSin = packed union {
+        @"16bit": packed struct(u32) {
+            cos: i16,
+            sin: i16,
+        },
+        @"32bit": packed struct(u64) {
+            cos: i32,
+            sin: i32,
+        },
     };
 
-    pub fn sinCos(self: *volatile Cordic, x: i16, m: i16) SinCosReturn {
-        self.csr.func = .sine;
+    pub const CoshSinh = packed union {
+        @"16bit": packed struct(u32) {
+            cosh: i16,
+            sinh: i16,
+        },
+        @"32bit": packed struct(u64) {
+            cosh: i32,
+            sinh: i32,
+        },
+    };
+
+    pub const Exp = packed union {
+        @"16bit": i16,
+        @"32bit": i32,
+    };
+
+    pub fn setup16BitArgsResults(self: *volatile Cordic) void {
         self.csr.nargs = .write32Bit;
         self.csr.nres = .read32Bit;
-        self.csr.precision = .iter62;
         self.csr.argsize = .argument16Bit;
         self.csr.ressize = .result16Bit;
+    }
 
-        const input: WriteRead16Bit = .{
-            .first = @bitCast(x),
-            .second = @bitCast(m),
+    pub fn cosSin(self: *volatile Cordic, angle: i16, modulus: i16, precision: Cordic.Csr.Precision) CosSin {
+        self.csr.func = .cosine;
+        self.csr.precision = precision;
+        self.csr.scale = 0;
+        setup16BitArgsResults(self);
+
+        const input: ReadWrite2x16Bit = .{
+            .first = angle,
+            .second = modulus,
         };
-
         self.wdata = @bitCast(input);
         while (self.csr.rrdy == .noNewResult) {}
-        const ret: SinCosReturn = @bitCast(self.rdata);
+        const rdata: Cordic.ReadWrite2x16Bit = @bitCast(self.rdata);
+        const ret = Cordic.CosSin{ .@"16bit" = @bitCast(rdata) };
 
         return ret;
     }
-};
 
-const cordic_base = 0x40021000;
-pub const cordic: *volatile Cordic = @ptrFromInt(cordic_base);
+    pub fn coshSinh(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) CoshSinh {
+        self.csr.func = .hyperbolic_cosine;
+        self.csr.precision = precision;
+        self.csr.scale = 1;
+        setup16BitArgsResults(self);
+
+        const input: ReadWrite2x16Bit = .{ .first = @divTrunc(x, 2), .second = 0 };
+        self.wdata = @bitCast(input);
+        while (self.csr.rrdy == .noNewResult) {}
+        const rdata: Cordic.ReadWrite2x16Bit = @bitCast(self.rdata);
+        var ret = Cordic.CoshSinh{ .@"32bit" = .{
+            .cosh = rdata.first,
+            .sinh = rdata.second,
+        } };
+        ret.@"32bit".cosh *|= 2;
+        ret.@"32bit".sinh *|= 2;
+
+        return ret;
+    }
+
+    pub fn exp(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) Exp {
+        const chsh: CoshSinh = self.coshSinh(x, precision);
+        const ret = Exp{ .@"32bit" = @as(i32, chsh.@"16bit".cosh) + @as(i32, chsh.@"16bit".sinh) };
+        return ret;
+    }
+};

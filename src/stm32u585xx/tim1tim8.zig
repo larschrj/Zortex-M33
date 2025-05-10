@@ -1,4 +1,4 @@
-const Tim1tim8 = packed struct {
+pub const Tim1Tim8 = packed struct {
     cr1: u32, // TIM control register 1,                   Address offset: 0x00
     cr2: u32, // TIM control register 2,                   Address offset: 0x04
     smcr: u32, // TIM slave mode control register,          Address offset: 0x08
@@ -30,8 +30,3 @@ const Tim1tim8 = packed struct {
     dcr: u32, // TIM DMA control register,                 Address offset: 0x3DC
     dmar: u32, // TIM DMA address for full transfer,        Address offset: 0x3E0
 };
-
-const tim1_base: u32 = 0x40012c00;
-const tim8_base: u32 = 0x40013400;
-pub const tim1: *volatile Tim1tim8 = @ptrFromInt(tim1_base);
-pub const tim8: *volatile Tim1tim8 = @ptrFromInt(tim8_base);

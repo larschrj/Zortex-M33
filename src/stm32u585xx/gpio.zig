@@ -257,7 +257,7 @@ const Seccfgr = packed struct(u16) {
     p15: u1,
 };
 
-const Gpioa = packed struct {
+pub const GpioA = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -488,7 +488,7 @@ const Gpioa = packed struct {
     };
 };
 
-const Gpiob = packed struct {
+pub const GpioB = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -768,7 +768,7 @@ const Gpiob = packed struct {
     };
 };
 
-const Gpioc = packed struct {
+pub const GpioC = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -978,7 +978,7 @@ const Gpioc = packed struct {
     };
 };
 
-const Gpiod = packed struct {
+pub const GpioD = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -1171,7 +1171,7 @@ const Gpiod = packed struct {
     };
 };
 
-const Gpioe = packed struct {
+pub const GpioE = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -1369,7 +1369,7 @@ const Gpioe = packed struct {
     };
 };
 
-const Gpiof = packed struct {
+pub const GpioF = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -1474,7 +1474,7 @@ const Gpiof = packed struct {
     };
 };
 
-const Gpiog = packed struct {
+pub const GpioG = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -1579,7 +1579,7 @@ const Gpiog = packed struct {
     };
 };
 
-const Gpioh = packed struct {
+pub const GpioH = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -1720,7 +1720,7 @@ const Gpioh = packed struct {
     };
 };
 
-const Gpioi = packed struct {
+pub const GpioI = packed struct {
     moder: Moder,
     otyper: Otyper,
     _reserved0: u16,
@@ -1824,23 +1824,3 @@ const Gpioi = packed struct {
         };
     };
 };
-
-const gpioa_base = 0x42020000;
-const gpiob_base = 0x42020400;
-const gpioc_base = 0x42020800;
-const gpiod_base = 0x42020c00;
-const gpioe_base = 0x42021000;
-const gpiof_base = 0x42021400;
-const gpiog_base = 0x42021800;
-const gpioh_base = 0x42021c00;
-const gpioi_base = 0x42022000;
-
-pub const gpioa: *volatile Gpioa = @ptrFromInt(gpioa_base);
-pub const gpiob: *volatile Gpiob = @ptrFromInt(gpiob_base);
-pub const gpioc: *volatile Gpioc = @ptrFromInt(gpioc_base);
-pub const gpiod: *volatile Gpiod = @ptrFromInt(gpiod_base);
-pub const gpioe: *volatile Gpioe = @ptrFromInt(gpioe_base);
-pub const gpiof: *volatile Gpiof = @ptrFromInt(gpiof_base);
-pub const gpiog: *volatile Gpiog = @ptrFromInt(gpiog_base);
-pub const gpioh: *volatile Gpioh = @ptrFromInt(gpioh_base);
-pub const gpioi: *volatile Gpioi = @ptrFromInt(gpioi_base);

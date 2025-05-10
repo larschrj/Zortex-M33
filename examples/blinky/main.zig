@@ -1,6 +1,6 @@
 const core_cm33 = @import("stm32u585xx").core_cm33;
-const rcc = @import("stm32u585xx").rcc.rcc;
-const gpio = @import("stm32u585xx").gpio;
+const rcc = @import("stm32u585xx").rcc;
+const gpioh = @import("stm32u585xx").gpioh;
 
 pub fn main() void {
     core_cm33.enableIrq();
@@ -38,15 +38,15 @@ fn clockConfig() void {
 }
 
 fn gpioConfig() void {
-    gpio.gpioh.moder.p6 = .output;
-    gpio.gpioh.otyper.p6 = .push_pull;
-    gpio.gpioh.pupdr.p6 = .no_pullup_pulldown;
-    gpio.gpioh.odr.p6 = 0b0;
+    gpioh.moder.p6 = .output;
+    gpioh.otyper.p6 = .push_pull;
+    gpioh.pupdr.p6 = .no_pullup_pulldown;
+    gpioh.odr.p6 = 0b0;
 
-    gpio.gpioh.moder.p7 = .output;
-    gpio.gpioh.otyper.p7 = .push_pull;
-    gpio.gpioh.pupdr.p7 = .no_pullup_pulldown;
-    gpio.gpioh.odr.p7 = 0b1;
+    gpioh.moder.p7 = .output;
+    gpioh.otyper.p7 = .push_pull;
+    gpioh.pupdr.p7 = .no_pullup_pulldown;
+    gpioh.odr.p7 = 0b1;
 }
 
 fn sysTickConfig() void {

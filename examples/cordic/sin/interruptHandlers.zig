@@ -1,5 +1,3 @@
-const gpio = @import("stm32u585xx").gpio;
-
 // SVC handler has to be split into an assembly only part and zig part
 // Any non assembly code in SVC_Handler will typically cause the stack pointer
 // to be modified prior to the assembly code which determines which stack pointer

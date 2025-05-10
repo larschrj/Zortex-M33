@@ -1,15 +1,20 @@
 const core_cm33 = @import("stm32u585xx").core_cm33;
-const rcc = @import("stm32u585xx").rcc.rcc;
+const rcc = @import("stm32u585xx").rcc;
+const Cordic = @import("stm32u585xx").Cordic;
 const cordic = @import("stm32u585xx").cordic;
 
-export const x: i16 = 0x4000; // 0.5 q1.15 format
+export const x: i16 = 0x2000; // 0.5 q1.15 format
 export const m: i16 = 0x4000; // 0.5 q1.15 format
-export var ret: cordic.Cordic.SinCosReturn = undefined;
+export var y: Cordic.CosSin = undefined;
+export var z: Cordic.CoshSinh = undefined;
+export var w: Cordic.Exp = undefined;
 
 pub fn main() void {
     core_cm33.enableIrq();
     clockConfig();
-    ret = cordic.cordic.sinCos(x, m);
+    y = cordic.cosSin(x, m, .iter40);
+    z = cordic.coshSinh(x, .iter40);
+    w = cordic.exp(x, .iter40);
 
     while (true) {}
 }

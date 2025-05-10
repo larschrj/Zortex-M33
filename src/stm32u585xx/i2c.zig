@@ -1,4 +1,4 @@
-const I2c = packed struct {
+pub const I2c = packed struct {
     cr1: Cr1, // I2C Control register 1,            Address offset: 0x00
     cr2: Cr2, // I2C Control register 2,            Address offset: 0x04
     oar1: Oar1, // I2C Own address 1 register,        Address offset: 0x08
@@ -13,14 +13,14 @@ const I2c = packed struct {
     autocr: Autocr,
 
     const Cr1 = packed struct(u32) {
-        pe: u1,
-        txie: u1,
-        rxie: u1,
-        addrie: u1,
-        nackie: u1,
-        stopie: u1,
-        tcie: u1,
-        errie: u1,
+        pe: Pe,
+        txie: Txie,
+        rxie: Rxie,
+        addrie: Addrie,
+        nackie: Nackie,
+        stopie: Stopie,
+        tcie: Tcie,
+        errie: Errie,
         dnf: u4,
         anfoff: u1,
         _reserved0: u1,
@@ -38,6 +38,46 @@ const I2c = packed struct {
         _reserved1: u5,
         addraclr: u1,
         stopfaclr: u1,
+
+        const Pe = enum(u1) {
+            peripherial_disable = 0,
+            peripheral_enable = 1,
+        };
+
+        const Txie = enum(u1) {
+            transmit_interrupt_disable = 0,
+            transmit_interrupt_enable = 1,
+        };
+
+        const Rxie = enum(u1) {
+            receive_interrupt_disable = 0,
+            receive_interrupt_enable = 1,
+        };
+
+        const Addrie = enum(u1) {
+            address_interrupt_disable = 0,
+            address_interrupt_enable = 1,
+        };
+
+        const Nackie = enum(u1) {
+            nack_interrupt_disable = 0,
+            nack_interrupt_enable = 1,
+        };
+
+        const Stopie = enum(u1) {
+            stop_interrupt_disable = 0,
+            stop_interrupt_enable = 1,
+        };
+
+        const Tcie = enum(u1) {
+            transfer_complete_interrupt_disable = 0,
+            transfer_complete_interrupt_enable = 1,
+        };
+
+        const Errie = enum(u1) {
+            error_interrupt_disable = 0,
+            error_interrupt_enable = 1,
+        };
     };
 
     const Cr2 = packed struct(u32) {

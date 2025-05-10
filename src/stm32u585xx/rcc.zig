@@ -1,4 +1,4 @@
-const Rcc = packed struct {
+pub const Rcc = packed struct {
     cr: Cr,
     _reserved0: u32,
     icscr1: Icscr1,
@@ -1084,6 +1084,3 @@ const Rcc = packed struct {
         enable = 1,
     };
 };
-
-const rcc_base: u32 = 0x46020c00;
-pub const rcc: *volatile Rcc = @ptrFromInt(rcc_base);
