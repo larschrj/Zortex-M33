@@ -74,19 +74,57 @@ pub const Irq = enum(i16) {
 // exception numbers = irq numbers + 16
 pub const ExceptionNumber = blk: {
     const fields = std.meta.fields(Irq);
-    var newFields: [fields.len]std.builtin.Type.EnumField = undefined;
+    var new_fields: [fields.len]std.builtin.Type.EnumField = undefined;
     for (fields, 0..) |f, i| {
-        newFields[i] = .{ .name = f.name, .value = f.value + 16 };
+        new_fields[i] = .{ .name = f.name, .value = f.value + 16 };
     }
-    const enumInfo = std.builtin.Type.Enum{ .tag_type = u8, .fields = &newFields, .decls = &.{}, .is_exhaustive = false };
-    break :blk @Type(.{ .@"enum" = enumInfo });
+    const enum_info = std.builtin.Type.Enum{ .tag_type = u8, .fields = &new_fields, .decls = &.{}, .is_exhaustive = false };
+    break :blk @Type(.{ .@"enum" = enum_info });
+};
+
+// irq with configurable priority
+pub const IrqConfigurablePriority = blk: {
+    const fields = std.meta.fields(Irq);
+    var no_of_new_fields: u16 = 0;
+    for (fields) |f| {
+        no_of_new_fields += if (f.value > -13) 1 else 0;
+    }
+    var new_fields: [no_of_new_fields]std.builtin.Type.EnumField = undefined;
+    var i: u16 = 0;
+    for (fields) |f| {
+        if (f.value > -13) {
+            new_fields[i] = .{ .name = f.name, .value = f.value };
+            i += 1;
+        }
+    }
+    const enum_info = std.builtin.Type.Enum{ .tag_type = i16, .fields = &new_fields, .decls = &.{}, .is_exhaustive = false };
+    break :blk @Type(.{ .@"enum" = enum_info });
+};
+
+// irq enabled in nvic
+pub const NvicIrq = blk: {
+    const fields = std.meta.fields(Irq);
+    var no_of_new_fields: u16 = 0;
+    for (fields) |f| {
+        no_of_new_fields += if (f.value >= 0) 1 else 0;
+    }
+    var new_fields: [no_of_new_fields]std.builtin.Type.EnumField = undefined;
+    var i: u16 = 0;
+    for (fields) |f| {
+        if (f.value >= 0) {
+            new_fields[i] = .{ .name = f.name, .value = f.value };
+            i += 1;
+        }
+    }
+    const enum_info = std.builtin.Type.Enum{ .tag_type = u16, .fields = &new_fields, .decls = &.{}, .is_exhaustive = false };
+    break :blk @Type(.{ .@"enum" = enum_info });
 };
 
 // Check IRQ numbers
 comptime {
     const irqTypeInfo = @typeInfo(Irq).@"enum";
     for (irqTypeInfo.fields) |field| {
-        if (field.value > 239) {
+        if (field.value > 479) {
             @compileError("Value of IRQ_t." ++ field.name ++ " exceeds 239");
         } else {}
     }

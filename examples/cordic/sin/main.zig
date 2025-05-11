@@ -3,11 +3,14 @@ const rcc = @import("stm32u585xx").rcc;
 const Cordic = @import("stm32u585xx").Cordic;
 const cordic = @import("stm32u585xx").cordic;
 
-export const x: i16 = 0x2000; // 0.5 q1.15 format
+export const x: i16 = 0x2000; // 0.25 q1.15 format
 export const m: i16 = 0x4000; // 0.5 q1.15 format
 export var y: Cordic.CosSin = undefined;
 export var z: Cordic.CoshSinh = undefined;
 export var w: Cordic.Exp = undefined;
+
+export const a: u8 = 128;
+export var b: u8 = 2;
 
 pub fn main() void {
     core_cm33.enableIrq();
@@ -15,6 +18,8 @@ pub fn main() void {
     y = cordic.cosSin(x, m, .iter40);
     z = cordic.coshSinh(x, .iter40);
     w = cordic.exp(x, .iter40);
+
+    b *= a;
 
     while (true) {}
 }

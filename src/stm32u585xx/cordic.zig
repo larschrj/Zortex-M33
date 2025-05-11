@@ -169,7 +169,7 @@ pub const Cordic = packed struct {
 
     pub fn exp(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) Exp {
         const chsh: CoshSinh = self.coshSinh(x, precision);
-        const ret = Exp{ .@"32bit" = @as(i32, chsh.@"16bit".cosh) + @as(i32, chsh.@"16bit".sinh) };
+        const ret = Exp{ .@"32bit" = chsh.@"32bit".cosh + chsh.@"32bit".sinh };
         return ret;
     }
 };

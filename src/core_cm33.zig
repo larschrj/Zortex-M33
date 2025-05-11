@@ -1,6 +1,8 @@
 const std = @import("std");
 pub const Irq = @import("irq").Irq;
 pub const ExceptionNumber = @import("irq").ExceptionNumber;
+pub const NvicIrq = @import("irq").NvicIrq;
+pub const IrqConfigurablePriority = @import("irq").IrqConfigurablePriority;
 
 const Apsr = packed struct(u32) {
     _reserved0: u16, // bit: 0..15 Reserved
@@ -488,17 +490,17 @@ const Fpu = packed struct {
     mvfr2: u32, // Offset: 0x018 (R/ )  Media and VFP Feature Register 2
 };
 
-const PriorityField = std.meta.Int(.unsigned, nvicPriorityBitSize);
+const PriorityField = std.meta.Int(.unsigned, nvic_priority_bit_size);
 const PriorityShift = std.math.Log2Int(PriorityField);
-const priorityTypeMax: PriorityField = std.math.maxInt(PriorityField);
-const Priorityencodeshift = u3;
-const priorityEncodeShift: Priorityencodeshift = 8 - nvicPriorityBitSize;
+const priority_type_max: PriorityField = std.math.maxInt(PriorityField);
+const PriorityEncodeShift = u3;
+const priority_encode_shift: PriorityEncodeShift = 8 - nvic_priority_bit_size;
 pub const Priority = packed struct {
-    groupPriority: PriorityField,
-    subPriority: PriorityField,
+    group_priority: PriorityField,
+    sub_priority: PriorityField,
 };
 
-const nvicPriorityBitSize: u4 = 4;
+const nvic_priority_bit_size: u4 = 4;
 const scs_base = 0xe000e000; // system control space base address
 const itm_base = 0xe0000000; // itm base address
 const dwt_base = 0xe0001000; // dwt base address
@@ -602,7 +604,6 @@ pub inline fn setControl(control: Control) void {
 }
 
 pub const irqError = error{
-    coreIrqNumber,
     negativeNvicIrq,
 };
 
@@ -614,128 +615,110 @@ pub fn nvicGetPriorityGrouping() Scb.Aircr.Prigroup {
     return scb.aircr.prigroup;
 }
 
-pub fn nvicEnableIrq(irq: Irq) irqError!void {
-    const irqValue = @intFromEnum(irq);
-
-    if (irqValue < 0) {
-        return irqError.negativeNvicIrq;
-    } else {
-        const irqNumber: u8 = @intCast(irqValue);
-        const arrayIndex: u8 = irqNumber / 32;
-        const bitShift: u5 = @truncate(irqNumber % 32);
-        nvic.iser[arrayIndex] |= @as(u32, 0b1) << bitShift;
-    }
+pub fn nvicEnableIrq(irq: NvicIrq) irqError!void {
+    const irq_value = @intFromEnum(irq);
+    const irq_number: u8 = @intCast(irq_value);
+    const array_index: u8 = irq_number / 32;
+    const bit_shift: u5 = @truncate(irq_number % 32);
+    nvic.iser[array_index] |= @as(u32, 0b1) << bit_shift;
 }
 
-pub fn nvicDisableIrq(irq: Irq) irqError!void {
-    const irqValue = @intFromEnum(irq);
-
-    if (irqValue < 0) {
-        return irqError.negativeNvicIrq;
-    } else {
-        const irqNumber: u8 = @intCast(irqValue);
-        const arrayIndex: u8 = irqNumber / 32;
-        const bitShift: u5 = @truncate(irqNumber % 32);
-        nvic.icer[arrayIndex] |= @as(u32, 0b1) << bitShift;
-    }
+pub fn nvicDisableIrq(irq: NvicIrq) irqError!void {
+    const irq_value = @intFromEnum(irq);
+    const irq_number: u8 = @intCast(irq_value);
+    const array_index: u8 = irq_number / 32;
+    const bit_shift: u5 = @truncate(irq_number % 32);
+    nvic.icer[array_index] |= @as(u32, 0b1) << bit_shift;
 }
 
-pub fn nvicSetPriority(irq: Irq, priorityEncoding: u8) irqError!void {
-    const irqNumber = @intFromEnum(irq);
-    const priorityBits: u8 = @truncate(priorityEncoding << priorityEncodeShift);
+pub fn nvicSetPriority(irq: IrqConfigurablePriority, priority_encoding: u8) irqError!void {
+    const irq_number = @intFromEnum(irq);
+    const priority_bits: u8 = @truncate(priority_encoding << priority_encode_shift);
     // core interrupt
-    if (irqNumber < 0) {
-        if (irqNumber < -12) {
-            return irqError.coreIrqNumber;
-        } else {
-            const arrayIndex: usize = @intCast(irqNumber + 12);
-            scb.shp[arrayIndex] = priorityBits;
-        }
+    if (irq_number < 0) {
+        const array_index: usize = @intCast(irq_number + 12);
+        scb.shp[array_index] = priority_bits;
     } else {
-        const arrayIndex: usize = @intCast(irqNumber);
-        nvic.ip[arrayIndex] = priorityBits;
+        const array_index: usize = @intCast(irq_number);
+        nvic.ip[array_index] = priority_bits;
     }
 }
 
-pub fn nvicGetPriority(irq: Irq) irqError!u8 {
-    const irqNumber = @intFromEnum(irq);
-    var priorityBits: u8 = undefined;
+pub fn nvicGetPriority(irq: IrqConfigurablePriority) irqError!u8 {
+    const irq_number = @intFromEnum(irq);
+    var priority_bits: u8 = undefined;
     // core interrupt
-    if (irqNumber < 0) {
-        if (irqNumber < -12) {
-            return irqError.coreIrqNumber;
-        } else {
-            const arrayIndex: usize = @intCast(irqNumber + 12);
-            priorityBits = scb.shp[arrayIndex];
-        }
+    if (irq_number < 0) {
+        const array_index: usize = @intCast(irq_number + 12);
+        priority_bits = scb.shp[array_index];
     } else {
-        const arrayIndex: usize = @intCast(irqNumber);
-        priorityBits = nvic.ip[arrayIndex];
+        const array_index: usize = @intCast(irq_number);
+        priority_bits = nvic.ip[array_index];
     }
-    const priorityEncoding: u8 = @truncate(priorityBits >> priorityEncodeShift);
-    return priorityEncoding;
+    const priority_encoding: u8 = @truncate(priority_bits >> priority_encode_shift);
+    return priority_encoding;
 }
 
 pub fn nvicEncodePriority(priority: Priority) u8 {
-    const groupPriorityBitSize: u4 = @as(u4, 7) -| @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1);
-    const subPriorityBitSize: u4 = @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1) -| @as(u4, 3);
-    var priorityEncoding: u8 = undefined;
+    const group_priority_bit_size: u4 = @as(u4, 7) -| @max(@intFromEnum(scb.aircr.prigroup), nvic_priority_bit_size - 1);
+    const sub_priority_bit_size: u4 = @max(@intFromEnum(scb.aircr.prigroup), nvic_priority_bit_size - 1) -| @as(u4, 3);
+    var priority_encoding: u8 = undefined;
 
-    if (groupPriorityBitSize == nvicPriorityBitSize) {
-        const groupPriorityMax = priorityTypeMax;
-        const groupPriority: u8 = @min(priority.groupPriority, groupPriorityMax);
-        priorityEncoding = groupPriority;
-    } else if (subPriorityBitSize == nvicPriorityBitSize) {
-        const subPriorityMax = priorityTypeMax;
-        const subPriority: u8 = @min(priority.subPriority, subPriorityMax);
-        priorityEncoding = subPriority;
+    if (group_priority_bit_size == nvic_priority_bit_size) {
+        const group_priority_max = priority_type_max;
+        const group_priority: u8 = @min(priority.group_priority, group_priority_max);
+        priority_encoding = group_priority;
+    } else if (sub_priority_bit_size == nvic_priority_bit_size) {
+        const sub_priority_max = priority_type_max;
+        const sub_priority: u8 = @min(priority.sub_priority, sub_priority_max);
+        priority_encoding = sub_priority;
     } else {
-        const groupMaxShift: PriorityShift = @truncate(nvicPriorityBitSize - groupPriorityBitSize);
-        const subMaxShift: PriorityShift = @truncate(nvicPriorityBitSize - subPriorityBitSize);
-        const groupPriorityMax = priorityTypeMax >> groupMaxShift;
-        const subPriorityMax = priorityTypeMax >> subMaxShift;
-        const groupPriority: u8 = @min(priority.groupPriority, groupPriorityMax);
-        const subPriority: u8 = @min(priority.subPriority, subPriorityMax);
-        const encodeShift: Priorityencodeshift = @truncate(subPriorityBitSize);
-        priorityEncoding = (groupPriority << encodeShift) | subPriority;
+        const groupMaxShift: PriorityShift = @truncate(nvic_priority_bit_size - group_priority_bit_size);
+        const subMaxShift: PriorityShift = @truncate(nvic_priority_bit_size - sub_priority_bit_size);
+        const groupPriorityMax = priority_type_max >> groupMaxShift;
+        const subPriorityMax = priority_type_max >> subMaxShift;
+        const groupPriority: u8 = @min(priority.group_priority, groupPriorityMax);
+        const subPriority: u8 = @min(priority.sub_priority, subPriorityMax);
+        const encodeShift: PriorityEncodeShift = @truncate(sub_priority_bit_size);
+        priority_encoding = (groupPriority << encodeShift) | subPriority;
     }
 
-    return priorityEncoding;
+    return priority_encoding;
 }
 
 pub fn nvicDecodePriority(priorityEncoding: PriorityField) Priority {
-    const groupPriorityBitSize: u4 = @as(u4, 7) -| @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1);
-    const subPriorityBitSize: u4 = @max(@intFromEnum(scb.aircr.prigroup), nvicPriorityBitSize - 1) -| @as(u4, 3);
+    const group_priority_bit_size: u4 = @as(u4, 7) -| @max(@intFromEnum(scb.aircr.prigroup), nvic_priority_bit_size - 1);
+    const sub_priority_bit_size: u4 = @max(@intFromEnum(scb.aircr.prigroup), nvic_priority_bit_size - 1) -| @as(u4, 3);
 
     var priority: Priority = undefined;
-    if (groupPriorityBitSize == nvicPriorityBitSize) {
-        priority.groupPriority = priorityEncoding;
-        priority.subPriority = 0;
-    } else if (subPriorityBitSize == nvicPriorityBitSize) {
-        priority.groupPriority = 0;
-        priority.subPriority = priorityEncoding;
+    if (group_priority_bit_size == nvic_priority_bit_size) {
+        priority.group_priority = priorityEncoding;
+        priority.sub_priority = 0;
+    } else if (sub_priority_bit_size == nvic_priority_bit_size) {
+        priority.group_priority = 0;
+        priority.sub_priority = priorityEncoding;
     } else {
-        const subPriorityShift: PriorityShift = subPriorityBitSize;
-        const subPriorityMask: PriorityField = 0xff >> subPriorityShift;
-        priority.groupPriority = priorityEncoding >> subPriorityShift;
-        priority.subPriority = priorityEncoding & subPriorityMask;
+        const sub_priority_shift: PriorityShift = sub_priority_bit_size;
+        const sub_priority_mask: PriorityField = 0xff >> sub_priority_shift;
+        priority.group_priority = priorityEncoding >> sub_priority_shift;
+        priority.sub_priority = priorityEncoding & sub_priority_mask;
     }
 
     return priority;
 }
 
 fn vectActiveType(comptime enumType: type, comptime newTagType: type) type {
-    const enumTypeInfo = @typeInfo(enumType);
-    var newEnumTypeInfo = enumTypeInfo;
-    newEnumTypeInfo.@"enum".tag_type = newTagType;
-    return @Type(newEnumTypeInfo);
+    const enum_type_info = @typeInfo(enumType);
+    var new_enum_type_info = enum_type_info;
+    new_enum_type_info.@"enum".tag_type = newTagType;
+    return @Type(new_enum_type_info);
 }
 
 // Check Prigroup values
 comptime {
-    const prigroupTypeInfo = @typeInfo(Scb.Aircr.Prigroup).@"enum";
-    for (prigroupTypeInfo.fields) |field| {
-        if (field.value < nvicPriorityBitSize - 1) {
+    const prigroup_type_info = @typeInfo(Scb.Aircr.Prigroup).@"enum";
+    for (prigroup_type_info.fields) |field| {
+        if (field.value < nvic_priority_bit_size - 1) {
             @compileError("Value of prigroup_t." ++ field.name ++ "less then nvicPriorityBitSize - 1");
         }
     }
