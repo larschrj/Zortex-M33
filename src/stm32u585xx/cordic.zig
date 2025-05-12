@@ -148,13 +148,13 @@ pub const Cordic = packed struct {
     }
 
     //
-    pub fn coshSinh(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) CoshSinhDiv2 {
+    pub fn coshSinhDiv2(self: *volatile Cordic, xDiv2: i16, precision: Cordic.Csr.Precision) CoshSinhDiv2 {
         self.csr.func = .hyperbolic_cosine;
         self.csr.precision = precision;
         self.csr.scale = 1;
         setup16BitArgsResults(self);
 
-        const input: ReadWrite2x16Bit = .{ .first = @divTrunc(x, 2), .second = 0 };
+        const input: ReadWrite2x16Bit = .{ .first = xDiv2, .second = 0 };
         self.wdata = @bitCast(input);
         while (self.csr.rrdy == .noNewResult) {}
         const rdata: Cordic.ReadWrite2x16Bit = @bitCast(self.rdata);
@@ -163,10 +163,9 @@ pub const Cordic = packed struct {
         return ret;
     }
 
-    pub fn exp(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) ExpDiv2 {
-        const chsh: CoshSinhDiv2 = self.coshSinh(x, precision);
+    pub fn expDiv2(self: *volatile Cordic, xDiv2: i16, precision: Cordic.Csr.Precision) ExpDiv2 {
+        const chsh: CoshSinhDiv2 = self.coshSinhDiv2(xDiv2, precision);
         const e = ExpDiv2{ .@"16bit" = chsh.@"16bit".cosh_div_2 + chsh.@"16bit".sinh_div_2 };
-
         return e;
     }
 };

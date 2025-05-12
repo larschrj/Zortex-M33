@@ -16,8 +16,8 @@ pub fn main() void {
     core_cm33.enableIrq();
     clockConfig();
     y = cordic.cosSin(x, m, .iter40);
-    z = cordic.coshSinh(x, .iter40);
-    w = cordic.exp(x, .iter40);
+    z = cordic.coshSinhDiv2(x, .iter40);
+    w = cordic.expDiv2(x, .iter40);
 
     b *= a;
 
