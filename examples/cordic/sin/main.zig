@@ -6,8 +6,8 @@ const cordic = @import("stm32u585xx").cordic;
 export const x: i16 = 0x2000; // 0.25 q1.15 format
 export const m: i16 = 0x4000; // 0.5 q1.15 format
 export var y: Cordic.CosSin = undefined;
-export var z: Cordic.CoshSinh = undefined;
-export var w: Cordic.Exp = undefined;
+export var z: Cordic.CoshSinhDiv2 = undefined;
+export var w: Cordic.ExpDiv2 = undefined;
 
 export const a: u8 = 128;
 export var b: u8 = 2;

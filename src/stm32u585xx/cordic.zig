@@ -106,18 +106,18 @@ pub const Cordic = packed struct {
         },
     };
 
-    pub const CoshSinh = packed union {
+    pub const CoshSinhDiv2 = packed union {
         @"16bit": packed struct(u32) {
-            cosh: i16,
-            sinh: i16,
+            cosh_div_2: i16,
+            sinh_div_2: i16,
         },
         @"32bit": packed struct(u64) {
-            cosh: i32,
-            sinh: i32,
+            cosh_div_2: i32,
+            sinh_div_2: i32,
         },
     };
 
-    pub const Exp = packed union {
+    pub const ExpDiv2 = packed union {
         @"16bit": i16,
         @"32bit": i32,
     };
@@ -147,7 +147,8 @@ pub const Cordic = packed struct {
         return ret;
     }
 
-    pub fn coshSinh(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) CoshSinh {
+    //
+    pub fn coshSinh(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) CoshSinhDiv2 {
         self.csr.func = .hyperbolic_cosine;
         self.csr.precision = precision;
         self.csr.scale = 1;
@@ -157,19 +158,15 @@ pub const Cordic = packed struct {
         self.wdata = @bitCast(input);
         while (self.csr.rrdy == .noNewResult) {}
         const rdata: Cordic.ReadWrite2x16Bit = @bitCast(self.rdata);
-        var ret = Cordic.CoshSinh{ .@"32bit" = .{
-            .cosh = rdata.first,
-            .sinh = rdata.second,
-        } };
-        ret.@"32bit".cosh *|= 2;
-        ret.@"32bit".sinh *|= 2;
+        const ret = CoshSinhDiv2{ .@"16bit" = .{ .cosh_div_2 = rdata.first, .sinh_div_2 = rdata.second } };
 
         return ret;
     }
 
-    pub fn exp(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) Exp {
-        const chsh: CoshSinh = self.coshSinh(x, precision);
-        const ret = Exp{ .@"32bit" = chsh.@"32bit".cosh + chsh.@"32bit".sinh };
-        return ret;
+    pub fn exp(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) ExpDiv2 {
+        const chsh: CoshSinhDiv2 = self.coshSinh(x, precision);
+        const e = ExpDiv2{ .@"16bit" = chsh.@"16bit".cosh_div_2 + chsh.@"16bit".sinh_div_2 };
+
+        return e;
     }
 };
