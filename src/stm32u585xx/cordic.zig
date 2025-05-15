@@ -95,31 +95,58 @@ pub const Cordic = packed struct {
         second: i16,
     };
 
-    pub const CosSin = packed union {
-        @"16bit": packed struct(u32) {
-            cos: i16,
-            sin: i16,
+    pub const FixedPoint16Bit = enum(u16) {
+        q1p15 = 0,
+        q2p14 = 1,
+        q3p13 = 2,
+    };
+
+    pub const FixedPoint32Bit = enum(u16) {
+        q1p31 = 0,
+        q2p30 = 1,
+        q3p29 = 2,
+    };
+
+    pub const CosSin16Bit = packed struct {
+        cos: i16,
+        sin: i16,
+    };
+
+    pub const CosSin32Bit = packed struct {
+        cos: i32,
+        sin: i32,
+    };
+
+    pub const CoshSinh16Bit = packed struct {
+        cosh: packed struct {
+            value: i16,
+            fp: FixedPoint16Bit,
         },
-        @"32bit": packed struct(u64) {
-            cos: i32,
-            sin: i32,
+        sinh: packed struct {
+            value: i16,
+            fp: FixedPoint16Bit,
         },
     };
 
-    pub const CoshSinhDiv2 = packed union {
-        @"16bit": packed struct(u32) {
-            cosh_div_2: i16,
-            sinh_div_2: i16,
+    pub const CoshSinh32Bit = packed struct {
+        cosh: packed struct {
+            value: i32,
+            fp: FixedPoint32Bit,
         },
-        @"32bit": packed struct(u64) {
-            cosh_div_2: i32,
-            sinh_div_2: i32,
+        sinh: packed struct {
+            value: i32,
+            fp: FixedPoint32Bit,
         },
     };
 
-    pub const ExpDiv2 = packed union {
-        @"16bit": i16,
-        @"32bit": i32,
+    pub const Exp16Bit = packed struct {
+        value: i16,
+        fp: FixedPoint16Bit,
+    };
+
+    pub const Exp32Bit = packed struct {
+        value: i32,
+        fp: FixedPoint32Bit,
     };
 
     pub fn setup16BitArgsResults(self: *volatile Cordic) void {
@@ -129,7 +156,15 @@ pub const Cordic = packed struct {
         self.csr.ressize = .result16Bit;
     }
 
-    pub fn cosSin(self: *volatile Cordic, angle: i16, modulus: i16, precision: Cordic.Csr.Precision) CosSin {
+    pub fn setup32BitArgsResults(self: *volatile Cordic) void {
+        self.csr.nargs = .write64Bit;
+        self.csr.nres = .read64Bit;
+        self.csr.argsize = .argument32Bit;
+        self.csr.ressize = .result32Bit;
+    }
+
+    /// x and m interpreted as q1.15 fixed point number
+    pub fn cosSin16Bit(self: *volatile Cordic, angle: i16, modulus: i16, precision: Cordic.Csr.Precision) CosSin16Bit {
         self.csr.func = .cosine;
         self.csr.precision = precision;
         self.csr.scale = 0;
@@ -142,30 +177,109 @@ pub const Cordic = packed struct {
         self.wdata = @bitCast(input);
         while (self.csr.rrdy == .noNewResult) {}
         const rdata: Cordic.ReadWrite2x16Bit = @bitCast(self.rdata);
-        const ret = Cordic.CosSin{ .@"16bit" = @bitCast(rdata) };
+        const ret: Cordic.CosSin16Bit = @bitCast(rdata);
 
         return ret;
     }
 
-    //
-    pub fn coshSinhDiv2(self: *volatile Cordic, xDiv2: i16, precision: Cordic.Csr.Precision) CoshSinhDiv2 {
+    /// x and m interpreted as q1.31 fixed point number
+    pub fn cosSin32Bit(self: *volatile Cordic, angle: i32, modulus: i32, precision: Cordic.Csr.Precision) CosSin32Bit {
+        self.csr.func = .cosine;
+        self.csr.precision = precision;
+        self.csr.scale = 0;
+        setup32BitArgsResults(self);
+
+        self.wdata = angle;
+        self.wdata = modulus;
+        while (self.csr.rrdy == .noNewResult) {}
+        var ret: Cordic.CosSin32Bit = undefined;
+        ret.cos = self.rdata;
+        ret.sin = self.rdata;
+
+        return ret;
+    }
+
+    /// x interpreted as q1.15 fixed point number
+    pub fn coshSinh16Bit(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) CoshSinh16Bit {
         self.csr.func = .hyperbolic_cosine;
         self.csr.precision = precision;
         self.csr.scale = 1;
         setup16BitArgsResults(self);
 
-        const input: ReadWrite2x16Bit = .{ .first = xDiv2, .second = 0 };
+        const input: ReadWrite2x16Bit = .{
+            .first = @divFloor(x, 2),
+            .second = 0,
+        };
         self.wdata = @bitCast(input);
         while (self.csr.rrdy == .noNewResult) {}
         const rdata: Cordic.ReadWrite2x16Bit = @bitCast(self.rdata);
-        const ret = CoshSinhDiv2{ .@"16bit" = .{ .cosh_div_2 = rdata.first, .sinh_div_2 = rdata.second } };
 
-        return ret;
+        const c, const c_overflow = @mulWithOverflow(rdata.first, @as(i16, 2));
+        const s, const s_overflow = @mulWithOverflow(rdata.second, @as(i16, 2));
+
+        var result: CoshSinh16Bit = undefined;
+        result.cosh = if (c_overflow == 1) .{
+            .value = rdata.first,
+            .fp = .q2p14,
+        } else .{
+            .value = c,
+            .fp = .q1p15,
+        };
+        result.sinh = if (s_overflow == 1) .{
+            .value = rdata.second,
+            .fp = .q2p14,
+        } else .{
+            .value = s,
+            .fp = .q1p15,
+        };
+
+        return result;
     }
 
-    pub fn expDiv2(self: *volatile Cordic, xDiv2: i16, precision: Cordic.Csr.Precision) ExpDiv2 {
-        const chsh: CoshSinhDiv2 = self.coshSinhDiv2(xDiv2, precision);
-        const e = ExpDiv2{ .@"16bit" = chsh.@"16bit".cosh_div_2 + chsh.@"16bit".sinh_div_2 };
-        return e;
+    /// x interpreted as q1.15 fixed point number
+    pub fn exp16Bit(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) Exp16Bit {
+        const chsh: CoshSinh16Bit = self.coshSinh16Bit(x, precision);
+        var ret: Exp16Bit = undefined;
+
+        if (chsh.cosh.fp != chsh.sinh.fp) {
+            switch (chsh.cosh.fp) {
+                .q1p15 => {
+                    const e, const overflow = @addWithOverflow(@divFloor(chsh.cosh.value, @as(i16, 2)), chsh.sinh.value);
+                    if (overflow == 1) {
+                        ret.value = @divFloor(chsh.cosh.value, @as(i16, 4)) + @divFloor(chsh.sinh.value, @as(i16, 2));
+                        ret.fp = .q3p13;
+                    } else {
+                        ret.value = e;
+                        ret.fp = .q2p14;
+                    }
+                },
+                .q2p14 => {
+                    const e, const overflow = @addWithOverflow(chsh.cosh.value, @divFloor(chsh.sinh.value, @as(i16, 2)));
+                    if (overflow == 1) {
+                        ret.value = @divFloor(chsh.cosh.value, @as(i16, 2)) + @divFloor(chsh.sinh.value, @as(i16, 4));
+                        ret.fp = .q3p13;
+                    } else {
+                        ret.value = e;
+                        ret.fp = .q2p14;
+                    }
+                },
+                else => unreachable,
+            }
+        } else {
+            const e, const overflow = @addWithOverflow(chsh.cosh.value, chsh.sinh.value);
+            if (overflow == 1) {
+                ret.value = @truncate(@divFloor(@as(i32, chsh.cosh.value) + @as(i32, chsh.sinh.value), 2));
+                switch (chsh.cosh.fp) {
+                    .q1p15 => ret.fp = .q2p14,
+                    .q2p14 => ret.fp = .q3p13,
+                    else => unreachable,
+                }
+            } else {
+                ret.value = e;
+                ret.fp = chsh.cosh.fp;
+            }
+        }
+
+        return ret;
     }
 };
