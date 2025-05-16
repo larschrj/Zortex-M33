@@ -1,43 +1,43 @@
 pub const I2c = packed struct {
-    cr1: Cr1, // I2C Control register 1,            Address offset: 0x00
-    cr2: Cr2, // I2C Control register 2,            Address offset: 0x04
-    oar1: Oar1, // I2C Own address 1 register,        Address offset: 0x08
-    oar2: Oar2, // I2C Own address 2 register,        Address offset: 0x0C
-    timingr: Timingr, // I2C Timing register,               Address offset: 0x10
-    timeotimeoutr_t: u32, // I2C Timeout register,              Address offset: 0x14
+    cr1: Cr1, // I2C Control register 1, Address offset: 0x00
+    cr2: Cr2, // I2C Control register 2, Address offset: 0x04
+    oar1: Oar1, // I2C Own address 1 register, Address offset: 0x08
+    oar2: Oar2, // I2C Own address 2 register, Address offset: 0x0C
+    timingr: Timingr, // I2C Timing register, Address offset: 0x10
+    timeotimeoutr_t: u32, // I2C Timeout register, Address offset: 0x14
     isr: Isr, // I2C Interrupt and status register, Address offset: 0x18
-    icr: Icr, // I2C Interrupt clear register,      Address offset: 0x1C
-    pecr: Pecr, // I2C PEC register,                  Address offset: 0x20
-    rxdr: Rxdr, // I2C Receive data register,         Address offset: 0x24
-    txdr: Txdr, // I2C Transmit data register,        Address offset: 0x28
+    icr: Icr, // I2C Interrupt clear register, Address offset: 0x1C
+    pecr: Pecr, // I2C PEC register, Address offset: 0x20
+    rxdr: Rxdr, // I2C Receive data register, Address offset: 0x24
+    txdr: Txdr, // I2C Transmit data register, Address offset: 0x28
     autocr: Autocr,
 
     const Cr1 = packed struct(u32) {
-        pe: Pe,
-        txie: Txie,
-        rxie: Rxie,
-        addrie: Addrie,
-        nackie: Nackie,
-        stopie: Stopie,
-        tcie: Tcie,
-        errie: Errie,
-        dnf: u4,
-        anfoff: Anfoff,
+        pe: Pe, // Peripheral mode
+        txie: Txie, // Tx interrupt enable
+        rxie: Rxie, // Rx interrupt enable
+        addrie: Addrie, // Address match interrupt enable (target only)
+        nackie: Nackie, // Not acknowledge received interrupt enable
+        stopie: Stopie, // Stop detection interrupt enable
+        tcie: Tcie, // Transfer complete interrupt enable
+        errie: Errie, // Error interrupts enable
+        dnf: u4, // Digital noise filter
+        anfoff: Anfoff, // Analog noise filter off
         _reserved0: u1,
-        txdmaen: Txdmaen,
-        rxdmaen: Rxdmaen,
-        sbc: u1,
-        nostretch: u1,
-        wupen: u1,
-        gcen: u1,
-        smbhen: u1,
-        smbden: u1,
-        alerten: u1,
-        pecen: u1,
-        fmp: u1,
+        txdmaen: Txdmaen, // DMA transmission requests enable
+        rxdmaen: Rxdmaen, // DMA reception requests enable
+        sbc: Sbc, // Target byte control
+        nostretch: Nostretch, // Clock stretching disable
+        wupen: Wupen, // Wake-up from stop mode enable
+        gcen: Gcen, // General call enable
+        smbhen: Smbhen, // SMBus host address enable
+        smbden: Smbden, // SMBus device default address enable
+        alerten: Alerten, // SMBus alert enable
+        pecen: Pecen, // PEC enable
+        fmp: Fmp, // Fast-mode plus 20 mA drive enable
         _reserved1: u5,
-        addraclr: u1,
-        stopfaclr: u1,
+        addraclr: Addraclr, // Address match flag (ADDR) automatic clear
+        stopfaclr: Stopfaclr, // Stop detection flag (STOPF) automatic clear
 
         const Pe = enum(u1) {
             peripherial_disable = 0,
@@ -151,18 +151,67 @@ pub const I2c = packed struct {
     };
 
     const Cr2 = packed struct(u32) {
-        sadd: u10,
-        rd_wrn: u1,
-        add10: u1,
-        head10r: u1,
-        start: u1,
-        stop: u1,
-        nack: u1,
-        nbytes: u8,
-        reload: u1,
-        autoend: u1,
-        pecbyte: u1,
+        sadd: Sadd, // Target address (controller mode)
+        rd_wrn: Rd_wrn, // Transfer direction (controller mode)
+        add10: u1, // 10-bit addressing mode (controller mode)
+        head10r: u1, // 10-bit address header only read direction (controller receiver mode)
+        start: u1, // Start condition generation
+        stop: u1, // Stop condition generation
+        nack: u1, // Nack generation (target mode)
+        nbytes: u8, // Number of bytes
+        reload: u1, // Nbytes reload mode
+        autoend: u1, //Automatic end mode (controller mode)
+        pecbyte: u1, // Packet error checking byte
         _reserved0: u5,
+
+        const Sadd = u10;
+
+        const Rd_wrn = enum(u1) {
+            request_write_transfer = 0,
+            request_read_transfer = 1,
+        };
+
+        const Add10 = enum(u1) {
+            address_mode_7bit = 0,
+            address_mode_10bit = 1,
+        };
+
+        const Head10r = enum(u1) {
+            read_seq_complete_10bit = 0,
+            read_seq_first_7bit = 1,
+        };
+
+        const Start = enum(u1) {
+            no_start = 0,
+            start = 1,
+        };
+
+        const Stop = enum(u1) {
+            no_stop = 0,
+            stop = 1,
+        };
+
+        const Nack = enum(u1) {
+            send_ack = 0,
+            send_nack = 1,
+        };
+
+        const Nbytes = u8;
+
+        const Reload = enum(u1) {
+            no_reload = 0,
+            reload = 1,
+        };
+
+        const Autoend = enum(u1) {
+            manual_end_mode = 0,
+            auto_end_mode = 1,
+        };
+
+        const Pecbyte = enum(u1) {
+            no_packet_error_check = 0,
+            request_packet_error_check = 1,
+        };
     };
 
     const Oar1 = packed struct(u32) {
