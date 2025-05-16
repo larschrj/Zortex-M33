@@ -62,7 +62,7 @@ pub fn build(b: *std.Build) void {
 
     // cordic/sin
     const cordicSinRootModule = b.createModule(.{
-        .root_source_file = b.path("./examples/cordic/sin/startup.zig"),
+        .root_source_file = b.path("./examples/cordic/startup.zig"),
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
