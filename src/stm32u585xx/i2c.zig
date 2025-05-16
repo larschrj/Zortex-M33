@@ -22,10 +22,10 @@ pub const I2c = packed struct {
         tcie: Tcie,
         errie: Errie,
         dnf: u4,
-        anfoff: u1,
+        anfoff: Anfoff,
         _reserved0: u1,
-        txdmaen: u1,
-        rxdmaen: u1,
+        txdmaen: Txdmaen,
+        rxdmaen: Rxdmaen,
         sbc: u1,
         nostretch: u1,
         wupen: u1,
@@ -77,6 +77,76 @@ pub const I2c = packed struct {
         const Errie = enum(u1) {
             error_interrupt_disable = 0,
             error_interrupt_enable = 1,
+        };
+
+        const Anfoff = enum(u1) {
+            analog_noise_filter_enabled = 0,
+            analog_noise_filter_disabled = 1,
+        };
+
+        const Txdmaen = enum(u1) {
+            tx_dma_disabled = 0,
+            tx_dma_enabled = 1,
+        };
+
+        const Rxdmaen = enum(u1) {
+            rx_dma_disabled = 0,
+            rx_dma_enabled = 1,
+        };
+
+        const Sbc = enum(u1) {
+            target_byte_control_disable = 0,
+            target_byte_control_enable = 1,
+        };
+
+        const Nostretch = enum(u1) {
+            clock_stretch_disable = 0,
+            clock_stretch_enable = 1,
+        };
+
+        const Wupen = enum(u1) {
+            wake_up_from_stop_disable = 0,
+            wake_up_from_stop_enable = 1,
+        };
+
+        const Gcen = enum(u1) {
+            general_call_disable = 0,
+            general_call_enable = 1,
+        };
+
+        const Smbhen = enum(u1) {
+            host_address_disable = 0,
+            host_address_enable = 1,
+        };
+
+        const Smbden = enum(u1) {
+            device_default_address_disable = 0,
+            device_default_address_enable = 1,
+        };
+
+        const Alerten = enum(u1) {
+            smbus_alert_disable = 0,
+            smbus_alert_enable = 1,
+        };
+
+        const Pecen = enum(u1) {
+            pec_calculation_disable = 0,
+            pec_calculation_enable = 1,
+        };
+
+        const Fmp = enum(u1) {
+            fast_mode_plus_disable = 0,
+            fast_mode_plus_enable = 1,
+        };
+
+        const Addraclr = enum(u1) {
+            addr_flag_set_by_hardware = 0,
+            addr_flag_cleared_by_hardware = 1,
+        };
+
+        const Stopfaclr = enum(u1) {
+            stopf_set_by_hardware = 0,
+            stopf_cleared_by_hardware = 1,
         };
     };
 
