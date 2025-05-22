@@ -417,29 +417,39 @@ pub const I2c = packed struct {
     };
 
     const Pecr = packed struct(u32) {
-        pec: u8,
+        pec: u8, // Packet error checking register
         _reserved0: u24,
     };
 
     const Rxdr = packed struct(u32) {
-        rxdata: u8,
+        rxdata: u8, // 8-bit receive data
         _reserved0: u32,
     };
 
     const Txdr = packed struct(u32) {
-        txdata: u8,
+        txdata: u8, // 8-bit transmit data
         _reserved0: u32,
     };
 
     const Autocr = packed struct(u32) {
         _reserved0: u6,
-        tcdmaen: u1,
-        tcrdmaen: u1,
+        tcdmaen: Tcdmaen,
+        tcrdmaen: Tcrdmaen,
         _reserved1: u8,
         trigsel: u4,
         trigpol: u1,
         trigen: u1,
         _reserved2: u10,
+
+        const Tcdmaen = enum(u1) {
+            dma_request_transfer_complete_disable = 0,
+            dma_request_transfer_complete_enable = 1,
+        };
+
+        const Tcrdmaen = enum(u1) {
+            dma_request_transfer_reload_disable = 0,
+            dma_request_transfer_reload_enable = 1,
+        };
     };
 };
 
