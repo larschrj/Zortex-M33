@@ -4,7 +4,7 @@ pub const I2c = packed struct {
     oar1: Oar1, // I2C Own address 1 register, Address offset: 0x08
     oar2: Oar2, // I2C Own address 2 register, Address offset: 0x0C
     timingr: Timingr, // I2C Timing register, Address offset: 0x10
-    timeotimeoutr_t: u32, // I2C Timeout register, Address offset: 0x14
+    timeoutr: Timeoutr, // I2C Timeout register, Address offset: 0x14
     isr: Isr, // I2C Interrupt and status register, Address offset: 0x18
     icr: Icr, // I2C Interrupt clear register, Address offset: 0x1C
     pecr: Pecr, // I2C PEC register, Address offset: 0x20
@@ -153,15 +153,15 @@ pub const I2c = packed struct {
     const Cr2 = packed struct(u32) {
         sadd: Sadd, // Target address (controller mode)
         rd_wrn: Rd_wrn, // Transfer direction (controller mode)
-        add10: u1, // 10-bit addressing mode (controller mode)
-        head10r: u1, // 10-bit address header only read direction (controller receiver mode)
-        start: u1, // Start condition generation
-        stop: u1, // Stop condition generation
-        nack: u1, // Nack generation (target mode)
-        nbytes: u8, // Number of bytes
-        reload: u1, // Nbytes reload mode
-        autoend: u1, //Automatic end mode (controller mode)
-        pecbyte: u1, // Packet error checking byte
+        add10: Add10, // 10-bit addressing mode (controller mode)
+        head10r: Head10r, // 10-bit address header only read direction (controller receiver mode)
+        start: Start, // Start condition generation
+        stop: Stop, // Stop condition generation
+        nack: Nack, // Nack generation (target mode)
+        nbytes: Nbytes, // Number of bytes
+        reload: Reload, // Nbytes reload mode
+        autoend: Autoend, //Automatic end mode (controller mode)
+        pecbyte: Pecbyte, // Packet error checking byte
         _reserved0: u5,
 
         const Sadd = u10;
@@ -232,58 +232,188 @@ pub const I2c = packed struct {
     };
 
     const Timingr = packed struct(u32) {
-        scll: u8,
-        sclh: u8,
-        sdadel: u4,
-        scldel: u4,
+        scll: Scll, // SCL low period, t_scll = (scll + 1)*t_presc
+        sclh: Sclh, // SCL high period, t_sclh = (sclh + 1)*t_presc
+        sdadel: Sdadel, // Data hold time, t_sdadel = sdadel*t_presc
+        scldel: Scldel, // Data setup time, t_scldel = (scldel + 1)*t_presc
         _reserved0: u4,
-        presc: u4,
+        presc: Presc, // Timing prescaler, t_presc = (presc + 1)*t_i2cclk
+
+        const Scll = u8;
+
+        const Sclh = u8;
+
+        const Sdadel = u4;
+
+        const Scldel = u4;
+
+        const Presc = u4;
     };
 
     const Timeoutr = packed struct(u32) {
-        timeouta: u12,
-        tidle: u1,
+        timeouta: Timeouta, // Bus timeout a
+        tidle: Tidle, // Idle clock timeout detection
         _reserved0: u2,
-        timouten: u1,
-        timeoutb: u12,
+        timouten: Timeouten, // Clock timeout enable
+        timeoutb: Timeoutb, // Bus timeout b
         _reserved1: u3,
-        texten: u1,
+        texten: u1, // Extended clock timeout enable
+
+        const Timeouta = u12;
+
+        const Tidle = enum(u1) {
+            timeouta_scl_low_timeout = 0,
+            timeouta_scl_low_sda_high_timeout = 1,
+        };
+
+        const Timeouten = enum(u1) {
+            scl_timeout_detection_disable = 0,
+            scl_timeout_detection_enable = 1,
+        };
+
+        const Timeoutb = u12;
+
+        const Texten = enum(u1) {
+            extended_timeout_detection_disable = 0,
+            extended_timeout_detection_enable = 1,
+        };
     };
 
     const Isr = packed struct(u32) {
-        txe: u1,
-        txis: u1,
-        rxne: u1,
-        addr: u1,
-        nackf: u1,
-        stopf: u1,
-        tc: u1,
-        tcr: u1,
-        berr: u1,
-        arlo: u1,
-        ovr: u1,
-        pecerr: u1,
-        timeout: u1,
-        alert: u1,
+        txe: Txe, // Transmit data register empty (transmitters)
+        txis: Txis, // Transmit interrupt status (transmitters)
+        rxne: Rxne, // Receive data register not empty (receivers)
+        addr: Addr, // Address matched (target mode)
+        nackf: Nackf, // Not acknowledge received flag
+        stopf: Stopf, // Stop detection flag
+        tc: Tc, // Transfer complete (controller mode)
+        tcr: Tcr, // Transfer complete reload
+        berr: Berr, // Bus error
+        arlo: Arlo, // Arbitration lost
+        ovr: Ovr, // Overrun/underrun (target mode)
+        pecerr: Pecerr, // Pec error in reception
+        timeout: Timeout, // Timeout or t_low detection flag
+        alert: Alert, // SMBus alert
         _reserved0: u1,
-        busy: u1,
-        dir: u1,
-        addcode: u7,
+        busy: Busy, // Bus busy
+        dir: Dir, // Transfer direction (target mode)
+        addcode: Addcode, // Address match code (target mode)
         _reserved1: u8,
+
+        const Txe = enum(u1) {
+            transmit_empty = 1,
+        };
+
+        const Txis = enum(u1) {
+            transmit_empty_interrupt = 1,
+        };
+
+        const Rxne = enum(u1) {
+            receive_not_empty = 1,
+        };
+
+        const Addr = enum(u1) {
+            address_match = 1,
+        };
+
+        const Nackf = enum(u1) {
+            nack_received = 1,
+        };
+
+        const Stopf = enum(u1) {
+            stop_detected = 1,
+        };
+
+        const Tc = enum(u1) {
+            transfer_complete = 1,
+        };
+
+        const Tcr = Tc;
+
+        const Berr = enum(u1) {
+            bus_error = 1,
+        };
+
+        const Arlo = enum(u1) {
+            arbitration_lost = 1,
+        };
+
+        const Ovr = enum(u1) {
+            overrun_underrun = 1,
+        };
+
+        const Pecerr = enum(u1) {
+            pec_error = 1,
+        };
+
+        const Timeout = enum(u1) {
+            timeout_tlow_detected = 1,
+        };
+
+        const Alert = enum(u1) {
+            smbus_alert = 1,
+        };
+
+        const Busy = enum(u1) {
+            bus_busy = 1,
+        };
+
+        const Dir = enum(u1) {
+            write_transfer = 0,
+            read_transfer = 1,
+        };
+
+        const Addcode = u7;
     };
 
     const Icr = packed struct(u32) {
         _reserved0: u3,
-        addrcf: u1,
-        nackcf: u1,
+        addrcf: Addrcf,
+        nackcf: Nackcf,
         _reserved1: u2,
-        berrcf: u1,
-        arlocf: u1,
-        ovrcf: u1,
-        peccf: u1,
-        timoutcf: u1,
-        alertcf: u1,
+        berrcf: Berrcf,
+        arlocf: Arlocf,
+        ovrcf: Ovrcf,
+        peccf: Peccf,
+        timoutcf: Timoutcf,
+        alertcf: Alertcf,
         _reserved2: u18,
+
+        const Addrcf = enum(u1) {
+            address_matched_flag_clear = 1,
+        };
+
+        const Nackcf = enum(u1) {
+            not_acknowledge_flag_clear = 1,
+        };
+
+        const Stopcf = enum(u1) {
+            stop_detection_flag_clear = 1,
+        };
+
+        const Berrcf = enum(u1) {
+            bus_error_flag_clear = 1,
+        };
+
+        const Arlocf = enum(u1) {
+            arbitration_lost_flag_clear = 1,
+        };
+
+        const Ovrcf = enum(u1) {
+            overrun_underrun_flag_clear = 1,
+        };
+
+        const Peccf = enum(u1) {
+            pec_error_flag_clear = 1,
+        };
+
+        const Timoutcf = enum(u1) {
+            timeout_detection_flag_clear = 1,
+        };
+
+        const Alertcf = enum(u1) {
+            alert_flag_clear = 1,
+        };
     };
 
     const Pecr = packed struct(u32) {
