@@ -1,6 +1,6 @@
 pub const I2c = packed struct {
     cr1: Cr1, // I2C Control register 1, Address offset: 0x00
-    cr2: Cr2, // I2C Control register 2, Address offset: 0x04
+    cr2: Cr2, // I2C Control rtgister 2, Address offset: 0x04
     oar1: Oar1, // I2C Own address 1 register, Address offset: 0x08
     oar2: Oar2, // I2C Own address 2 register, Address offset: 0x0C
     timingr: Timingr, // I2C Timing register, Address offset: 0x10
@@ -215,20 +215,35 @@ pub const I2c = packed struct {
     };
 
     const Oar1 = packed struct(u32) {
-        oa1: u10,
-        oa1mode: u1,
+        oa1: u10, // Interface own target address
+        oa1mode: Oa1mode, // Own address 1 10-bit mode
         _reserved0: u4,
-        oa1en: u1,
+        oa1en: Oa1en, // Own address 1 enable
         _reserved1: u16,
+
+        const Oa1mode = enum(u1) {
+            address_7bits = 0,
+            address_10bits = 1,
+        };
+
+        const Oa1en = enum(u1) {
+            own_address_disable = 0,
+            own_address_enable = 1,
+        };
     };
 
     const Oar2 = packed struct(u32) {
         _reserved0: u1,
-        oa2: u7,
-        oa2msk: u3,
+        oa2: u7, // Interface address
+        oa2msk: u3, // Own address 2 masks
         _reserved1: u4,
-        oa2en: u1,
+        oa2en: Oa2en, // Own address 2 enable
         _reserved2: u16,
+
+        const Oa2en = enum(u1) {
+            own_address_2_disable = 0,
+            own_address_2_enable = 1,
+        };
     };
 
     const Timingr = packed struct(u32) {
@@ -257,7 +272,7 @@ pub const I2c = packed struct {
         timouten: Timeouten, // Clock timeout enable
         timeoutb: Timeoutb, // Bus timeout b
         _reserved1: u3,
-        texten: u1, // Extended clock timeout enable
+        texten: Texten, // Extended clock timeout enable
 
         const Timeouta = u12;
 
@@ -368,15 +383,15 @@ pub const I2c = packed struct {
 
     const Icr = packed struct(u32) {
         _reserved0: u3,
-        addrcf: Addrcf,
-        nackcf: Nackcf,
+        addrcf: Addrcf, // Address matched flag clear
+        nackcf: Nackcf, // Not acknowledge flag clear
         _reserved1: u2,
-        berrcf: Berrcf,
-        arlocf: Arlocf,
-        ovrcf: Ovrcf,
-        peccf: Peccf,
-        timoutcf: Timoutcf,
-        alertcf: Alertcf,
+        berrcf: Berrcf, // Bus error flag clear
+        arlocf: Arlocf, // Arbitation lost flag clear
+        ovrcf: Ovrcf, // Overrun/underrun flag clear
+        peccf: Peccf, // PEC error flag clear
+        timoutcf: Timoutcf, // Timeout detection flag clear
+        alertcf: Alertcf, // Alert flag clear
         _reserved2: u18,
 
         const Addrcf = enum(u1) {
@@ -433,12 +448,12 @@ pub const I2c = packed struct {
 
     const Autocr = packed struct(u32) {
         _reserved0: u6,
-        tcdmaen: Tcdmaen,
-        tcrdmaen: Tcrdmaen,
+        tcdmaen: Tcdmaen, // DMA request enable on transfer complete event
+        tcrdmaen: Tcrdmaen, // DMA request enable on transfer complete reload event
         _reserved1: u8,
-        trigsel: u4,
-        trigpol: u1,
-        trigen: u1,
+        trigsel: u4, // Trigger selection
+        trigpol: Trigpol, // Trigger polarity
+        trigen: Trigen, //Trigger enable
         _reserved2: u10,
 
         const Tcdmaen = enum(u1) {
@@ -449,6 +464,16 @@ pub const I2c = packed struct {
         const Tcrdmaen = enum(u1) {
             dma_request_transfer_reload_disable = 0,
             dma_request_transfer_reload_enable = 1,
+        };
+
+        const Trigpol = enum(u1) {
+            rising_edge = 0,
+            falling_edge = 1,
+        };
+
+        const Trigen = enum(u1) {
+            trigger_disable = 0,
+            trigger_enable = 1,
         };
     };
 };
