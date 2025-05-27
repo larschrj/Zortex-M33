@@ -100,8 +100,8 @@ pub const I2c = packed struct {
         };
 
         const Nostretch = enum(u1) {
-            clock_stretch_disable = 0,
-            clock_stretch_enable = 1,
+            clock_stretch_enable = 0,
+            clock_stretch_disable = 1,
         };
 
         const Wupen = enum(u1) {
@@ -385,6 +385,7 @@ pub const I2c = packed struct {
         _reserved0: u3,
         addrcf: Addrcf, // Address matched flag clear
         nackcf: Nackcf, // Not acknowledge flag clear
+        stopcf: Stopcf, // Stop detection flag clear
         _reserved1: u2,
         berrcf: Berrcf, // Bus error flag clear
         arlocf: Arlocf, // Arbitation lost flag clear
@@ -438,12 +439,12 @@ pub const I2c = packed struct {
 
     const Rxdr = packed struct(u32) {
         rxdata: u8, // 8-bit receive data
-        _reserved0: u32,
+        _reserved0: u24,
     };
 
     const Txdr = packed struct(u32) {
         txdata: u8, // 8-bit transmit data
-        _reserved0: u32,
+        _reserved0: u24,
     };
 
     const Autocr = packed struct(u32) {

@@ -1,69 +1,69 @@
 pub const Rcc = packed struct {
-    cr: Cr,
+    cr: Cr, // Clock control, address offset 0x00
     _reserved0: u32,
-    icscr1: Icscr1,
-    icscr2: Icscr2,
-    icscr3: Icscr3,
-    crrcr: Crrcr,
+    icscr1: Icscr1, // Internal clock sources calibration 1, address offset 0x08
+    icscr2: Icscr2, // Internal clock sources calibration 2, address offset 0x0c
+    icscr3: Icscr3, // Internal clock sources calibration 3, address offset 0x10
+    crrcr: Crrcr, // Clock recovery RC, address offset 0x14
     _reserved1: u32,
-    cfgr1: Cfgr1,
-    cfgr2: Cfgr2,
-    cfgr3: Cfgr3,
-    pll1cfgr: Pll1cfgr,
-    pll2cfgr: Pll2cfgr,
-    pll3cfgr: Pll3cfgr,
-    pll1divr: Pll1divr,
-    pll1fracr: Pll1fracr,
-    pll2divr: Pll2divr,
-    pll2fracr: Pll2fracr,
-    pll3divr: Pll3divr,
-    pll3fracr: Pll3fracr,
+    cfgr1: Cfgr1, // Clock configuration 1, address offset 0x1c
+    cfgr2: Cfgr2, // Clock configuration 2, address offset 0x20
+    cfgr3: Cfgr3, // Clock configuration 3, address offset 0x24
+    pll1cfgr: Pll1cfgr, // PLL1 configuration, address offset 0x28
+    pll2cfgr: Pll2cfgr, // PLL2 configuration, address offset 0x2c
+    pll3cfgr: Pll3cfgr, // PLL3 configuration, address offset 0x30
+    pll1divr: Pll1divr, // PLL1 dividers configuration, address offset 0x34
+    pll1fracr: Pll1fracr, // PLL1 fractional divider configuration, address offset 0x38
+    pll2divr: Pll2divr, // PLL2 dividers configuration, address offset 0x3c
+    pll2fracr: Pll2fracr, // PLL2 fractional divider configuration, address offset 0x40
+    pll3divr: Pll3divr, // PLL3 dividers configuration, address offset 0x44
+    pll3fracr: Pll3fracr, // PLL3 fractional divider configuration, address offset 0x48
     _reserved2: u32,
-    cier: Cier,
-    cifr: Cifr,
-    cicr: Cicr,
+    cier: Cier, // Clock interrupt enable, address offset 0x50
+    cifr: Cifr, // Clock interrupt flag, address offset 0x54
+    cicr: Cicr, //  Clock interrupt clear, address offset 0x58
     _reserved3: u32,
-    ahb1rstr: Ahb1rstr,
-    ahb2rstr1: Ahb2rstr1,
-    ahb2rstr2: Ahb2rstr2,
-    ahb3rstr: Ahb3rstr,
+    ahb1rstr: Ahb1rstr, // AHB1 peripherals reset, address offset 0x60
+    ahb2rstr1: Ahb2rstr1, // AHB2 peripherals reset 1, address offset 0x64
+    ahb2rstr2: Ahb2rstr2, // AHB2 peripherals reset 2, address offset 0x68
+    ahb3rstr: Ahb3rstr, // AHB3 peripherals reset, address offset 0x6c
     _reserved4: u32,
-    apb1rstr1: Apb1rstr1,
-    apb1rstr2: Apb1rstr2,
-    apb2rstr: Apb2rstr,
-    apb3rstr: Apb3rstr,
+    apb1rstr1: Apb1rstr1, // APB1 peripherals reset 1, address offset 0x74
+    apb1rstr2: Apb1rstr2, // APB1 peripherals reset 2, address offset 0x78
+    apb2rstr: Apb2rstr, // APB2 peripherals reset, address offset 0x7c
+    apb3rstr: Apb3rstr, // APB3 peripherals reset, address offset 0x80
     _reserved5: u32,
-    ahb1enr: Ahb1enr,
-    ahb2enr1: Ahb2enr1,
-    ahb2enr2: Ahb2enr2,
-    ahb3enr: Ahb3enr,
+    ahb1enr: Ahb1enr, // AHB1 peripherals enable, address offset 0x88
+    ahb2enr1: Ahb2enr1, // AHB2 peripherals enable 1, address offset 0x8c
+    ahb2enr2: Ahb2enr2, // AHB2 peripherals enable 2, address offset 0x90
+    ahb3enr: Ahb3enr, // AHB3 peripherals enable, address offset 0x94
     _reserved6: u32,
-    apb1enr1: Apb1enr1,
-    apb1enr2: Apb1enr2,
-    apb2enr: Apb2enr,
-    apb3enr: Apb3enr,
+    apb1enr1: Apb1enr1, // APB1 peripherals enable 1, address offset 0x9c
+    apb1enr2: Apb1enr2, // APB1 peripherals enable 2, address offset 0xa0
+    apb2enr: Apb2enr, // APB2 peripherals enable, address offset 0xa4
+    apb3enr: Apb3enr, // APB3 peripherals enable, address offset 0xa8
     _reserved7: u32,
-    ahb1smenr: Ahb1smenr,
-    ahb2smenr1: Ahb2smenr1,
-    ahb2smenr2: Ahb2smenr2,
-    ahb3smenr: Ahb3smenr,
+    ahb1smenr: Ahb1smenr, // AHB1 peripherals clock enable in sleep and stop modes, address offset 0xb0
+    ahb2smenr1: Ahb2smenr1, // AHB2 peripherals clock enable in sleep and stop modes 1, address offset 0xb4
+    ahb2smenr2: Ahb2smenr2, // AHB2 peripherals clock enable in sleep and stop modes 2, address offset 0xb8
+    ahb3smenr: Ahb3smenr, // AHB3 peripherals clock enable in sleep and stop modes, address offset 0xbc
     _reserved8: u32,
-    apb1smenr1: Apb1smenr1,
-    apb1smenr2: Apb1smenr2,
-    apb2smenr: Apb2smenr,
-    apb3smenr: Apb3smenr,
+    apb1smenr1: Apb1smenr1, // APB1 peripherals clock enable in sleep and stop modes 1, address offset 0xc4
+    apb1smenr2: Apb1smenr2, // APB1 peripherals clock enable in sleep and stop modes 2, address offset 0xc8
+    apb2smenr: Apb2smenr, // APB2 peripherals clock enable in sleep and stop modes, address offset 0xcc
+    apb3smenr: Apb3smenr, // APB3 peripherals clock enable in sleep and stop modes, address offset 0xd0
     _reserved9: u32,
-    srdamr: Srdamr,
+    srdamr: Srdamr, // SRD autonomous mode, address offset 0xd8
     _reserved10: u32,
-    ccipr1: Ccipr1,
-    ccipr2: Ccipr2,
-    ccipr3: Ccipr3,
+    ccipr1: Ccipr1, // IPs clocks configuration 1, address offset 0xe0
+    ccipr2: Ccipr2, // IPs clocks configuration 2, address offset 0xe4
+    ccipr3: Ccipr3, // IPs clocks configuration 3, address offset 0xe8
     _reserved11: u32,
-    bdcr: Bdcr,
-    csr: Csr,
+    bdcr: Bdcr, // Backup domain control, address offset 0xf0
+    csr: Csr, // V33 clock control and status, address offset 0xf4
     _reserved12: u192,
-    seccfgr: Seccfgr,
-    privcfgr: Privcfgr,
+    seccfgr: Seccfgr, // RCC secure configuration, address offset 0x110
+    privcfgr: Privcfgr, // RCC privilege configuration, address offset 0x114
 
     const Cr = packed struct(u32) {
         msison: Status,
