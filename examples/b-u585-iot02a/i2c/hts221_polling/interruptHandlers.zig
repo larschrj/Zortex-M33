@@ -1,4 +1,5 @@
 const gpioh = @import("stm32u585xx").gpioh;
+const i2c2 = @import("stm32u585xx").i2c2;
 
 // SVC handler has to be split into an assembly only part and zig part
 // Any non assembly code in SVC_Handler will typically cause the stack pointer
@@ -24,4 +25,15 @@ pub fn SysTick_Handler() callconv(.c) void {
     // toggle user leds
     gpioh.odr.p6 ^= 0b1;
     gpioh.odr.p7 ^= 0b1;
+}
+
+pub fn I2C2_EV_IRQHandler() callconv(.c) void {
+    if (i2c2.isr.txis == .transmit_empty_interrupt) {}
+    if (i2c2.isr.rxne == .receive_not_empty) {}
+}
+
+pub fn I2C2_ER_IRQHandler() callconv(.c) void {
+    asm volatile (
+        \\ bkpt #0
+    );
 }

@@ -77,20 +77,20 @@ pub fn build(b: *std.Build) void {
     b.default_step.dependOn(&cordic_exe.step);
     b.installArtifact(cordic_exe);
 
-    // board/b-u585-iot02a/i2c
-    const b_u585_i2c_root_module = b.createModule(.{
-        .root_source_file = b.path("./examples/b-u585-iot02a/i2c/startup.zig"),
+    // b-u585-iot02a/i2c/hts221_polling
+    const b_u585_i2c_hts221_polling_root_module = b.createModule(.{
+        .root_source_file = b.path("./examples/b-u585-iot02a/i2c/hts221_polling/startup.zig"),
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
     });
-    b_u585_i2c_root_module.addImport("stm32u585xx", stm32u585xx);
-    const b_u585_i2c_exe = b.addExecutable(.{
-        .name = "b_u585_i2c.elf",
-        .root_module = b_u585_i2c_root_module,
+    b_u585_i2c_hts221_polling_root_module.addImport("stm32u585xx", stm32u585xx);
+    const b_u585_i2c_hts221_polling_exe = b.addExecutable(.{
+        .name = "b_u585_i2c_hts221_polling.elf",
+        .root_module = b_u585_i2c_hts221_polling_root_module,
     });
-    b_u585_i2c_exe.entry = .{ .symbol_name = "Reset_Handler" };
-    b_u585_i2c_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
-    b.default_step.dependOn(&b_u585_i2c_exe.step);
-    b.installArtifact(b_u585_i2c_exe);
+    b_u585_i2c_hts221_polling_exe.entry = .{ .symbol_name = "Reset_Handler" };
+    b_u585_i2c_hts221_polling_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
+    b.default_step.dependOn(&b_u585_i2c_hts221_polling_exe.step);
+    b.installArtifact(b_u585_i2c_hts221_polling_exe);
 }

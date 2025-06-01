@@ -69,8 +69,8 @@ const Ospeedr = packed struct(u32) {
     const Ospeed = enum(u2) {
         low = 0b00,
         medium = 0b01,
-        fast = 0b10,
-        high = 0b11,
+        high = 0b10,
+        very_high = 0b11,
     };
 };
 

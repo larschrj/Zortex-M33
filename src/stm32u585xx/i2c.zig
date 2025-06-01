@@ -151,18 +151,18 @@ pub const I2c = packed struct {
     };
 
     const Cr2 = packed struct(u32) {
-        sadd: Sadd, // Target address (controller mode)
-        rd_wrn: Rd_wrn, // Transfer direction (controller mode)
-        add10: Add10, // 10-bit addressing mode (controller mode)
-        head10r: Head10r, // 10-bit address header only read direction (controller receiver mode)
-        start: Start, // Start condition generation
-        stop: Stop, // Stop condition generation
-        nack: Nack, // Nack generation (target mode)
-        nbytes: Nbytes, // Number of bytes
-        reload: Reload, // Nbytes reload mode
-        autoend: Autoend, //Automatic end mode (controller mode)
-        pecbyte: Pecbyte, // Packet error checking byte
-        _reserved0: u5,
+        sadd: Sadd = 0, // Target address (controller mode)
+        rd_wrn: Rd_wrn = .request_write_transfer, // Transfer direction (controller mode)
+        add10: Add10 = .address_mode_7bit, // 10-bit addressing mode (controller mode)
+        head10r: Head10r = .read_seq_complete_10bit, // 10-bit address header only read direction (controller receiver mode)
+        start: Start = .no_start, // Start condition generation
+        stop: Stop = .no_stop, // Stop condition generation
+        nack: Nack = .send_ack, // Nack generation (target mode)
+        nbytes: Nbytes = 0, // Number of bytes
+        reload: Reload = .no_reload, // Nbytes reload mode
+        autoend: Autoend = .manual_end_mode, //Automatic end mode (controller mode)
+        pecbyte: Pecbyte = .no_packet_error_check, // Packet error checking byte
+        _reserved0: u5 = 0,
 
         const Sadd = u10;
 
@@ -247,12 +247,12 @@ pub const I2c = packed struct {
     };
 
     const Timingr = packed struct(u32) {
-        scll: Scll, // SCL low period, t_scll = (scll + 1)*t_presc
-        sclh: Sclh, // SCL high period, t_sclh = (sclh + 1)*t_presc
-        sdadel: Sdadel, // Data hold time, t_sdadel = sdadel*t_presc
-        scldel: Scldel, // Data setup time, t_scldel = (scldel + 1)*t_presc
+        scll: u8, // SCL low period, t_scll = (scll + 1)*t_presc
+        sclh: u8, // SCL high period, t_sclh = (sclh + 1)*t_presc
+        sdadel: u4, // Data hold time, t_sdadel = sdadel*t_presc
+        scldel: u4, // Data setup time, t_scldel = (scldel + 1)*t_presc
         _reserved0: u4,
-        presc: Presc, // Timing prescaler, t_presc = (presc + 1)*t_i2cclk
+        presc: u4, // Timing prescaler, t_presc = (presc + 1)*t_i2cclk
 
         const Scll = u8;
 
@@ -477,13 +477,46 @@ pub const I2c = packed struct {
             trigger_enable = 1,
         };
     };
-};
 
-const i2c1_base = 0x40005400;
-const i2c2_base = 0x40005800;
-const i2c3_base = 0x46002800;
-const i2c4_base = 0x40008400;
-pub const i2c1: *volatile I2c = @ptrFromInt(i2c1_base);
-pub const i2c2: *volatile I2c = @ptrFromInt(i2c2_base);
-pub const i2c3: *volatile I2c = @ptrFromInt(i2c3_base);
-pub const i2c4: *volatile I2c = @ptrFromInt(i2c4_base);
+    pub fn writePolling(self: *volatile @This(), target_address: u10, target_sub_address: u8, tx_buffer: []const u8) void {
+        const cr2: Cr2 = .{
+            .nbytes = @intCast(1 + tx_buffer.len),
+            .sadd = target_address,
+            .rd_wrn = .request_write_transfer,
+            .start = .start,
+        };
+        self.cr2 = cr2;
+        while (self.isr.txis != .transmit_empty_interrupt) {}
+        self.txdr.txdata = target_sub_address;
+        for (tx_buffer) |tx| {
+            while (self.isr.txis != .transmit_empty_interrupt) {}
+            self.txdr.txdata = tx;
+        }
+        while (self.isr.tc != .transfer_complete) {}
+        self.cr2.stop = .stop;
+    }
+
+    pub fn readPolling(self: *volatile @This(), target_address: u10, target_sub_address: u8, rx_buffer: []u8) void {
+        const cr2: Cr2 = .{
+            .nbytes = 1,
+            .sadd = target_address,
+            .rd_wrn = .request_write_transfer,
+            .start = .start,
+        };
+        self.cr2 = cr2;
+        while (self.isr.txis != .transmit_empty_interrupt) {}
+        self.txdr.txdata = target_sub_address;
+        while (self.isr.tc != .transfer_complete) {}
+
+        self.cr2 = .{
+            .nbytes = @intCast(rx_buffer.len),
+            .sadd = target_address,
+            .rd_wrn = .request_read_transfer,
+            .start = .start,
+        };
+        for (rx_buffer) |*rx| {
+            while (self.isr.rxne != .receive_not_empty) {}
+            rx.* = self.rxdr.rxdata;
+        }
+    }
+};

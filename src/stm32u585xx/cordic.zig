@@ -149,14 +149,14 @@ pub const Cordic = packed struct {
         fp: FixedPoint32Bit,
     };
 
-    pub fn setup16BitArgsResults(self: *volatile Cordic) void {
+    pub fn setup16BitArgsResults(self: *volatile @This()) void {
         self.csr.nargs = .write32Bit;
         self.csr.nres = .read32Bit;
         self.csr.argsize = .argument16Bit;
         self.csr.ressize = .result16Bit;
     }
 
-    pub fn setup32BitArgsResults(self: *volatile Cordic) void {
+    pub fn setup32BitArgsResults(self: *volatile @This()) void {
         self.csr.nargs = .write64Bit;
         self.csr.nres = .read64Bit;
         self.csr.argsize = .argument32Bit;
@@ -164,7 +164,7 @@ pub const Cordic = packed struct {
     }
 
     /// x and m interpreted as q1.15 fixed point number
-    pub fn cosSin16Bit(self: *volatile Cordic, angle: i16, modulus: i16, precision: Cordic.Csr.Precision) CosSin16Bit {
+    pub fn cosSin16Bit(self: *volatile @This(), angle: i16, modulus: i16, precision: Cordic.Csr.Precision) CosSin16Bit {
         self.csr.func = .cosine;
         self.csr.precision = precision;
         self.csr.scale = 0;
@@ -183,7 +183,7 @@ pub const Cordic = packed struct {
     }
 
     /// x and m interpreted as q1.31 fixed point number
-    pub fn cosSin32Bit(self: *volatile Cordic, angle: i32, modulus: i32, precision: Cordic.Csr.Precision) CosSin32Bit {
+    pub fn cosSin32Bit(self: *volatile @This(), angle: i32, modulus: i32, precision: Cordic.Csr.Precision) CosSin32Bit {
         self.csr.func = .cosine;
         self.csr.precision = precision;
         self.csr.scale = 0;
@@ -200,7 +200,7 @@ pub const Cordic = packed struct {
     }
 
     /// x interpreted as q1.15 fixed point number
-    pub fn coshSinh16Bit(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) CoshSinh16Bit {
+    pub fn coshSinh16Bit(self: *volatile @This(), x: i16, precision: Cordic.Csr.Precision) CoshSinh16Bit {
         self.csr.func = .hyperbolic_cosine;
         self.csr.precision = precision;
         self.csr.scale = 1;
@@ -237,7 +237,7 @@ pub const Cordic = packed struct {
     }
 
     /// x interpreted as q1.15 fixed point number
-    pub fn exp16Bit(self: *volatile Cordic, x: i16, precision: Cordic.Csr.Precision) Exp16Bit {
+    pub fn exp16Bit(self: *volatile @This(), x: i16, precision: Cordic.Csr.Precision) Exp16Bit {
         const chsh: CoshSinh16Bit = self.coshSinh16Bit(x, precision);
         var ret: Exp16Bit = undefined;
 
