@@ -77,6 +77,23 @@ pub fn build(b: *std.Build) void {
     b.default_step.dependOn(&cordic_exe.step);
     b.installArtifact(cordic_exe);
 
+    // i2c/bm280_polling
+    const i2c_bme280_polling_root_module = b.createModule(.{
+        .root_source_file = b.path("./examples/i2c/bme280_polling/startup.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+    });
+    i2c_bme280_polling_root_module.addImport("stm32u585xx", stm32u585xx);
+    const i2c_bme280_polling_exe = b.addExecutable(.{
+        .name = "i2c_bme280_polling.elf",
+        .root_module = i2c_bme280_polling_root_module,
+    });
+    i2c_bme280_polling_exe.entry = .{ .symbol_name = "Reset_Handler" };
+    i2c_bme280_polling_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
+    b.default_step.dependOn(&i2c_bme280_polling_exe.step);
+    b.installArtifact(i2c_bme280_polling_exe);
+
     // b-u585-iot02a/i2c/hts221_polling
     const b_u585_i2c_hts221_polling_root_module = b.createModule(.{
         .root_source_file = b.path("./examples/b-u585-iot02a/i2c/hts221_polling/startup.zig"),

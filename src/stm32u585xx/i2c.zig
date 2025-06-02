@@ -478,9 +478,9 @@ pub const I2c = packed struct {
         };
     };
 
-    pub fn writePolling(self: *volatile @This(), target_address: u10, target_sub_address: u8, tx_buffer: []const u8) void {
+    pub fn writePolling(self: *volatile @This(), target_address: u10, target_sub_address: u8, tx_value: u8) void {
         const cr2: Cr2 = .{
-            .nbytes = @intCast(1 + tx_buffer.len),
+            .nbytes = 2,
             .sadd = target_address,
             .rd_wrn = .request_write_transfer,
             .start = .start,
@@ -488,20 +488,46 @@ pub const I2c = packed struct {
         self.cr2 = cr2;
         while (self.isr.txis != .transmit_empty_interrupt) {}
         self.txdr.txdata = target_sub_address;
-        for (tx_buffer) |tx| {
-            while (self.isr.txis != .transmit_empty_interrupt) {}
-            self.txdr.txdata = tx;
-        }
+        while (self.isr.txis != .transmit_empty_interrupt) {}
+        self.txdr.txdata = tx_value;
         while (self.isr.tc != .transfer_complete) {}
         self.cr2.stop = .stop;
     }
 
-    pub fn readPolling(self: *volatile @This(), target_address: u10, target_sub_address: u8, rx_buffer: []u8) void {
+    pub fn readPolling(self: *volatile @This(), target_address: u10, target_sub_address: u8) u8 {
         const cr2: Cr2 = .{
             .nbytes = 1,
             .sadd = target_address,
             .rd_wrn = .request_write_transfer,
             .start = .start,
+            .nack = .send_ack,
+        };
+        self.cr2 = cr2;
+        while (self.isr.txis != .transmit_empty_interrupt) {}
+        self.txdr.txdata = target_sub_address;
+        while (self.isr.tc != .transfer_complete) {}
+
+        self.cr2 = .{
+            .nbytes = 1,
+            .sadd = target_address,
+            .rd_wrn = .request_read_transfer,
+            .start = .start,
+        };
+        while (self.isr.rxne != .receive_not_empty) {}
+        const rx = self.rxdr.rxdata;
+        self.cr2.nack = .send_nack;
+        self.cr2.stop = .stop;
+
+        return rx;
+    }
+
+    pub fn readMultiplePolling(self: *volatile @This(), target_address: u10, target_sub_address: u8, rx_buffer: []u8) void {
+        const cr2: Cr2 = .{
+            .nbytes = 1,
+            .sadd = target_address,
+            .rd_wrn = .request_write_transfer,
+            .start = .start,
+            .nack = .send_ack,
         };
         self.cr2 = cr2;
         while (self.isr.txis != .transmit_empty_interrupt) {}
@@ -514,9 +540,11 @@ pub const I2c = packed struct {
             .rd_wrn = .request_read_transfer,
             .start = .start,
         };
-        for (rx_buffer) |*rx| {
+        for (rx_buffer) |*item| {
             while (self.isr.rxne != .receive_not_empty) {}
-            rx.* = self.rxdr.rxdata;
+            item.* = self.rxdr.rxdata;
         }
+        self.cr2.nack = .send_nack;
+        self.cr2.stop = .stop;
     }
 };
