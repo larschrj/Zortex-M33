@@ -3,6 +3,7 @@ export const rcc = @import("stm32u585xx").rcc;
 export const gpiob = @import("stm32u585xx").gpiob;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c1 = @import("stm32u585xx").i2c1;
+const bme280 = @import("bme280");
 
 export var bme280_address: u8 = 0x77;
 export var id: u8 = 0;
@@ -17,6 +18,9 @@ pub fn main() void {
 
     id = i2c1.readPolling(bme280_address << 1, 0xd0);
     i2c1.readMultiplePolling(bme280_address << 1, 0x88, &bme280_cal);
+    const buff = i2c1.readPolling(bme280_address << 1, @intFromPtr(&bme280.register.id));
+
+    _ = buff;
 
     while (true) {}
 }
