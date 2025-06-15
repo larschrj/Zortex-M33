@@ -1,3 +1,10 @@
+bme280_read_func: Bme280ReadFunc = null,
+bme280_write_func: Bme280WriteFunc = null,
+
+const Bme280ReadFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
+
+const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
+
 const Register = extern struct {
     calib00: u8,
     calib01: u8,
