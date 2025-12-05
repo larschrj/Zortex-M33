@@ -17,7 +17,7 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    const bme280_0: bme280 = .{ .bme280_read_func = &bme280_read };
+    const bme280_0: bme280 = .{ .i2c_addr = .@"0x77" };
     _ = bme280_0;
 
     id = i2c1.readPolling(bme280_address << 1, 0xd0);
