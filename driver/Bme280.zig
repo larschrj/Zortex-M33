@@ -1,4 +1,4 @@
-const Register = extern struct {
+pub const Register = extern struct {
     dig_T1: u16,
     dig_T2: i16,
     dig_T3: i16,
@@ -93,3 +93,11 @@ const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, regis
 i2c_addr: ?I2c_addr = null,
 bme280_read_func: Bme280ReadFunc = null,
 bme280_write_func: Bme280WriteFunc = null,
+
+test "Bme280 Register size" {
+    const std = @import("std");
+    const Bme280 = @This();
+
+    std.debug.print("@sizeOf(Bme280.Register) = {}\n", .{@sizeOf(Bme280.Register)});
+    try std.testing.expect(@sizeOf(Bme280.Register) == 191);
+}
