@@ -72,6 +72,8 @@ const Register = extern struct {
     };
 };
 
+pub const register: *volatile Register = @ptrFromInt(0x88);
+
 const I2c_addr = enum(u8) {
     @"0x76" = 0x76,
     @"0x77" = 0x77,
@@ -84,5 +86,3 @@ const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, regis
 i2c_addr: ?I2c_addr = null,
 bme280_read_func: Bme280ReadFunc = null,
 bme280_write_func: Bme280WriteFunc = null,
-
-pub const register: *volatile Register = @ptrFromInt(0x88);
