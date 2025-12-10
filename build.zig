@@ -43,9 +43,9 @@ pub fn build(b: *std.Build) void {
     });
     stm32u585xx.addImport("core_cm33", core_cm33_stm32u585xx);
 
-    // driver/bme280
-    const bme280 = b.addModule("bme280", .{
-        .root_source_file = b.path("./driver/bme280.zig"),
+    // driver/Bme280
+    const Bme280 = b.addModule("Bme280", .{
+        .root_source_file = b.path("./driver/Bme280.zig"),
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
@@ -93,7 +93,7 @@ pub fn build(b: *std.Build) void {
         .unwind_tables = .none,
     });
     i2c_bme280_polling_root_module.addImport("stm32u585xx", stm32u585xx);
-    i2c_bme280_polling_root_module.addImport("bme280", bme280);
+    i2c_bme280_polling_root_module.addImport("Bme280", Bme280);
     const i2c_bme280_polling_exe = b.addExecutable(.{
         .name = "i2c_bme280_polling.elf",
         .root_module = i2c_bme280_polling_root_module,

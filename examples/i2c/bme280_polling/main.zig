@@ -4,7 +4,7 @@ export const gpiob = @import("stm32u585xx").gpiob;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c1 = @import("stm32u585xx").i2c1;
 const I2c = @import("stm32u585xx").I2c;
-const bme280 = @import("bme280");
+const Bme280 = @import("Bme280");
 
 export var bme280_address: u8 = 0x77;
 export var id: u8 = 0;
@@ -17,12 +17,12 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    const bme280_0: bme280 = .{ .i2c_addr = .@"0x77" };
+    const bme280_0: Bme280 = .{ .i2c_addr = .@"0x77" };
     _ = bme280_0;
 
     id = i2c1.readPolling(bme280_address << 1, 0xd0);
     i2c1.readMultiplePolling(bme280_address << 1, 0x88, &bme280_cal);
-    const buff = i2c1.readPolling(bme280_address << 1, @intFromPtr(&bme280.register.hum_msb));
+    const buff = i2c1.readPolling(bme280_address << 1, @intFromPtr(&Bme280.register.hum_msb));
 
     _ = buff;
 

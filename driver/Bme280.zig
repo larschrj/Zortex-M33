@@ -19,7 +19,7 @@ const Register = extern struct {
     reset: u8 = 0x00,
     dig_H2: i16,
     dig_H3: u8,
-    dig_H4_H5: i32,
+    dig_H4_H5: Dig_H4_H5,
     dig_H6: i8,
     _reserved3: u8,
     ctrl_hum: Ctrl_hum,
@@ -35,6 +35,13 @@ const Register = extern struct {
     temp_xlsb: Temp_xlsb,
     hum_msb: u8 = 0x80,
     hum_lsb: u8 = 0x00,
+
+    const Dig_H4_H5 = packed struct(u32) {
+        _reserved0: u4 = 0,
+        dig_h4: i12 = 0,
+        dig_h5: i12 = 0,
+        _reserved1: u4 = 0,
+    };
 
     const Ctrl_hum = packed struct(u8) {
         osrs_h: u3 = 0,
