@@ -1,4 +1,4 @@
-pub const Register = extern struct {
+pub const Registers = packed struct {
     dig_T1: u16,
     dig_T2: i16,
     dig_T3: i16,
@@ -13,20 +13,35 @@ pub const Register = extern struct {
     dig_P9: i16,
     _reserved0: u8,
     dig_H1: u8,
-    _reserved1: [23]u16,
+    _reserved1: u32,
+    _reserved2: u32,
+    _reserved3: u32,
+    _reserved4: u32,
+    _reserved5: u32,
+    _reserved6: u32,
+    _reserved7: u32,
+    _reserved8: u32,
+    _reserved9: u32,
+    _reserved10: u32,
+    _reserved11: u32,
+    _reserved12: u16,
     id: u8 = 0x60,
-    _reserved2: [15]u8,
-    reset: u8 = 0x00,
+    _reserved13: u32,
+    _reserved14: u32,
+    _reserved15: u32,
+    _reserved16: u16,
+    _reserved17: u8,
+    reset: u8 = 0x0,
     dig_H2: i16,
     dig_H3: u8,
     dig_H4_H5: Dig_H4_H5,
     dig_H6: i8,
-    _reserved3: u8,
+    _reserved18: u8,
     ctrl_hum: Ctrl_hum,
     status: Status,
     ctrl_meas: Ctrl_meas,
     config: Config,
-    _reserved4: u8,
+    _reserved19: u8,
     press_msb: u8 = 0x80,
     press_lsb: u8 = 0x00,
     press_xlsb: Press_xlsb,
@@ -36,11 +51,9 @@ pub const Register = extern struct {
     hum_msb: u8 = 0x80,
     hum_lsb: u8 = 0x00,
 
-    const Dig_H4_H5 = packed struct(u32) {
-        _reserved0: u4 = 0,
+    const Dig_H4_H5 = packed struct(u24) {
         dig_h4: i12 = 0,
         dig_h5: i12 = 0,
-        _reserved1: u4 = 0,
     };
 
     const Ctrl_hum = packed struct(u8) {
@@ -79,7 +92,26 @@ pub const Register = extern struct {
     };
 };
 
-pub const register: *volatile Register = @ptrFromInt(0x88);
+pub const Calibration = struct {
+    dig_T1: u16 = 0,
+    dig_T2: i16 = 0,
+    dig_T3: i16 = 0,
+    dig_P1: u16 = 0,
+    dig_P2: i16 = 0,
+    dig_P3: i16 = 0,
+    dig_P4: i16 = 0,
+    dig_P5: i16 = 0,
+    dig_P6: i16 = 0,
+    dig_P7: i16 = 0,
+    dig_P8: i16 = 0,
+    dig_P9: i16 = 0,
+    dig_H1: u8 = 0,
+    dig_H2: i16 = 0,
+    dig_H3: u8 = 0,
+    dig_H4: i16 = 0,
+    dig_H5: i16 = 0,
+    dig_H6: i8 = 0,
+};
 
 const I2c_addr = enum(u8) {
     @"0x76" = 0x76,
@@ -90,14 +122,27 @@ const Bme280ReadFunc = ?*const fn (dev_address: u8, register_address: u8, regist
 
 const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
 
+pub fn ReadCalibration(bme280: *@This()) void {
+    const cal_fields = @typeInfo(Calibration).@"enum".fields;
+
+    for (cal_fields) |field| {
+        const bme280_register_addr = @intFromPtr(&(@field(registers, field)));
+        bme280.bme280_read_func.?(bme280.i2c_addr, bme280_register_addr, @field(bme280.calibration, field));
+    }
+}
+
 i2c_addr: ?I2c_addr = null,
 bme280_read_func: Bme280ReadFunc = null,
 bme280_write_func: Bme280WriteFunc = null,
+calibration: Calibration = .{},
+
+const registers: *Registers = @ptrFromInt(0x88);
 
 test "Bme280 Register size" {
     const std = @import("std");
     const Bme280 = @This();
 
-    std.debug.print("@sizeOf(Bme280.Register) = {}\n", .{@sizeOf(Bme280.Register)});
-    try std.testing.expect(@sizeOf(Bme280.Register) == 191);
+    std.debug.print("@sizeOf(Bme280.Register) = {}\n", .{@sizeOf(Bme280.Registers)});
+    std.debug.print("@offsetOf(Bme280, dig_H6) = {}\n", .{@offsetOf(Bme280.Registers, "dig_H6")});
+    try std.testing.expect(@sizeOf(Bme280.Registers) == 191);
 }

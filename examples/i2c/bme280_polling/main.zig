@@ -17,12 +17,12 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    const bme280_0: Bme280 = .{ .i2c_addr = .@"0x77" };
+    const bme280_0: Bme280 = .{ .i2c_addr = .@"0x77", .bme280_read_func = bme280_read };
     _ = bme280_0;
 
     id = i2c1.readPolling(bme280_address << 1, 0xd0);
     i2c1.readMultiplePolling(bme280_address << 1, 0x88, &bme280_cal);
-    const buff = i2c1.readPolling(bme280_address << 1, @intFromPtr(&Bme280.register.hum_msb));
+    const buff = i2c1.readPolling(bme280_address << 1, 0x88);
 
     _ = buff;
 
