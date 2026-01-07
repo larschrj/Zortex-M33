@@ -36,12 +36,16 @@ pub const Registers = packed struct {
     dig_H3: u8,
     dig_H4_H5: Dig_H4_H5,
     dig_H6: i8,
-    _reserved18: u8,
+    _reserved18: u16,
+    _reserved19: u16,
+    _reserved20: u16,
+    _reserved21: u16,
+    _reserved22: u16,
     ctrl_hum: Ctrl_hum,
     status: Status,
     ctrl_meas: Ctrl_meas,
     config: Config,
-    _reserved19: u8,
+    _reserved23: u8,
     press_msb: u8 = 0x80,
     press_lsb: u8 = 0x00,
     press_xlsb: Press_xlsb,
@@ -123,12 +127,9 @@ const Bme280ReadFunc = ?*const fn (dev_address: u8, register_address: u8, regist
 const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
 
 pub fn ReadCalibration(bme280: *@This()) void {
-    const cal_fields = @typeInfo(Calibration).@"enum".fields;
-
-    for (cal_fields) |field| {
-        const bme280_register_addr = @intFromPtr(&(@field(registers, field)));
-        bme280.bme280_read_func.?(bme280.i2c_addr, bme280_register_addr, @field(bme280.calibration, field));
-    }
+    var buffer: u8[2] = .{0};
+    bme280.?.bme280_read_func(bme280.i2c_addr, @intFromPtr(&registers.dig_T1), &buffer);
+    bme280.calibration.dig_T1 = @bitCast(buffer);
 }
 
 i2c_addr: ?I2c_addr = null,
@@ -138,11 +139,28 @@ calibration: Calibration = .{},
 
 const registers: *Registers = @ptrFromInt(0x88);
 
-test "Bme280 Register size" {
+test "Bme280 last register offset/address" {
     const std = @import("std");
     const Bme280 = @This();
 
-    std.debug.print("@sizeOf(Bme280.Register) = {}\n", .{@sizeOf(Bme280.Registers)});
-    std.debug.print("@offsetOf(Bme280, dig_H6) = {}\n", .{@offsetOf(Bme280.Registers, "dig_H6")});
-    try std.testing.expect(@sizeOf(Bme280.Registers) == 191);
+    const hum_lsb_offset = @offsetOf(Bme280.Registers, "hum_lsb");
+    try std.testing.expect(hum_lsb_offset == 118);
+}
+
+test "Read dig_H4_H5 register and bitcast to struct" {
+    const std = @import("std");
+
+    const Reg = packed struct(u24) {
+        a: i12,
+        b: i12,
+    };
+    const reg_in: Reg = .{ .a = -1, .b = -2 };
+
+    const buf: [3]u8 = @bitCast(reg_in);
+    const reg_out: Reg = @bitCast(buf);
+
+    std.debug.print("buf[0] = {x}\n", .{buf[0]});
+    std.debug.print("buf[1] = {x}\n", .{buf[1]});
+    std.debug.print("buf[2] = {x}\n", .{buf[2]});
+    try std.testing.expectEqual(reg_out, reg_in);
 }
