@@ -131,17 +131,17 @@ pub fn ReadCalibration(bme280: *@This()) void {
         const addr: u8 = @intFromPtr(&(@field(registers.*, field.name)));
         const ptr: *field.type = @ptrCast(@alignCast(&buffer));
 
-        bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), addr, buffer[0..(cal_size - 1)]);
+        bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), addr, buffer[0..cal_size]);
         @field(bme280.calibration, field.name) = @bitCast(ptr.*);
     }
 }
+
+const registers: *Registers = @ptrFromInt(0x88);
 
 i2c_addr: ?I2c_addr = null,
 bme280_read_func: Bme280ReadFunc = null,
 bme280_write_func: Bme280WriteFunc = null,
 calibration: Calibration = .{},
-
-const registers: *Registers = @ptrFromInt(0x88);
 
 test "Bme280 last register offset/address" {
     const std = @import("std");
