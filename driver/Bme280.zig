@@ -56,11 +56,6 @@ pub const Registers = packed struct {
     hum_msb: u8 = 0x80,
     hum_lsb: u8 = 0x00,
 
-    const Dig_H4_H5 = packed struct(u24) {
-        dig_h4: i12 = 0,
-        dig_h5: i12 = 0,
-    };
-
     const Ctrl_hum = packed struct(u8) {
         osrs_h: u3 = 0,
         _reserved0: u5 = 0,
