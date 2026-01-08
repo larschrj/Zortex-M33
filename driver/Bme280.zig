@@ -34,7 +34,8 @@ pub const Registers = packed struct {
     reset: u8 = 0x0,
     dig_H2: i16,
     dig_H3: u8,
-    dig_H4_H5: Dig_H4_H5,
+    dig_H4: i12,
+    dig_H5: i12,
     dig_H6: i8,
     _reserved18: u16,
     _reserved19: u16,
@@ -127,9 +128,17 @@ const Bme280ReadFunc = ?*const fn (dev_address: u8, register_address: u8, regist
 const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
 
 pub fn ReadCalibration(bme280: *@This()) void {
-    var buffer: u8[2] = .{0};
-    bme280.?.bme280_read_func(bme280.i2c_addr, @intFromPtr(&registers.dig_T1), &buffer);
-    bme280.calibration.dig_T1 = @bitCast(buffer);
+    var buffer: [3]u8 = .{0} ** 3;
+    const fields = @typeInfo(Calibration).@"struct".fields;
+
+    inline for (fields) |field| {
+        const cal_size = @sizeOf(field.type);
+        const addr: u8 = @intFromPtr(&(@field(registers.*, field.name)));
+        const ptr: *field.type = @ptrCast(@alignCast(&buffer));
+
+        bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), addr, buffer[0..(cal_size - 1)]);
+        @field(bme280.calibration, field.name) = @bitCast(ptr.*);
+    }
 }
 
 i2c_addr: ?I2c_addr = null,
@@ -145,22 +154,4 @@ test "Bme280 last register offset/address" {
 
     const hum_lsb_offset = @offsetOf(Bme280.Registers, "hum_lsb");
     try std.testing.expect(hum_lsb_offset == 118);
-}
-
-test "Read dig_H4_H5 register and bitcast to struct" {
-    const std = @import("std");
-
-    const Reg = packed struct(u24) {
-        a: i12,
-        b: i12,
-    };
-    const reg_in: Reg = .{ .a = -1, .b = -2 };
-
-    const buf: [3]u8 = @bitCast(reg_in);
-    const reg_out: Reg = @bitCast(buf);
-
-    std.debug.print("buf[0] = {x}\n", .{buf[0]});
-    std.debug.print("buf[1] = {x}\n", .{buf[1]});
-    std.debug.print("buf[2] = {x}\n", .{buf[2]});
-    try std.testing.expectEqual(reg_out, reg_in);
 }
