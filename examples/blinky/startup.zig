@@ -1,5 +1,4 @@
 const builtin = @import("builtin");
-const core_cm4 = @import("stm32f411re").core_cm4;
 const irq = @import("interruptHandlers.zig");
 const main = @import("main.zig");
 
