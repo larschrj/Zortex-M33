@@ -123,17 +123,36 @@ const Bme280ReadFunc = ?*const fn (dev_address: u8, register_address: u8, regist
 const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
 
 pub fn ReadCalibration(bme280: *@This()) void {
-    var buffer: [3]u8 = .{0} ** 3;
-    const fields = @typeInfo(Calibration).@"struct".fields;
+    var buffer = [_]u8{0} ** 24;
+    var reg_addr: u8 = 0;
 
-    inline for (fields) |field| {
-        const cal_size = @sizeOf(field.type);
-        const addr: u8 = @intFromPtr(&(@field(registers.*, field.name)));
-        const ptr: *field.type = @ptrCast(@alignCast(&buffer));
+    reg_addr = @intFromPtr(&registers.dig_T1);
+    bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), reg_addr, buffer[0..24]);
 
-        bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), addr, buffer[0..cal_size]);
-        @field(bme280.calibration, field.name) = @bitCast(ptr.*);
-    }
+    bme280.calibration.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
+    bme280.calibration.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
+    bme280.calibration.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
+    bme280.calibration.dig_P1 = (@as(u16, buffer[7]) << 8) | @as(u16, buffer[6]);
+    bme280.calibration.dig_P2 = (@as(i16, buffer[9]) << 8) | @as(i16, buffer[8]);
+    bme280.calibration.dig_P3 = (@as(i16, buffer[11]) << 8) | @as(i16, buffer[10]);
+    bme280.calibration.dig_P4 = (@as(i16, buffer[13]) << 8) | @as(i16, buffer[12]);
+    bme280.calibration.dig_P5 = (@as(i16, buffer[15]) << 8) | @as(i16, buffer[14]);
+    bme280.calibration.dig_P6 = (@as(i16, buffer[17]) << 8) | @as(i16, buffer[16]);
+    bme280.calibration.dig_P7 = (@as(i16, buffer[19]) << 8) | @as(i16, buffer[18]);
+    bme280.calibration.dig_P8 = (@as(i16, buffer[21]) << 8) | @as(i16, buffer[20]);
+    bme280.calibration.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
+
+    reg_addr = @intFromPtr(&registers.dig_H1);
+    bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), reg_addr, buffer[0..1]);
+    bme280.calibration.dig_H1 = buffer[0];
+
+    reg_addr = @intFromPtr(&registers.dig_H2);
+    bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), reg_addr, buffer[0..7]);
+    bme280.calibration.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
+    bme280.calibration.dig_H3 = buffer[2];
+    bme280.calibration.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
+    bme280.calibration.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
+    bme280.calibration.dig_H6 = @bitCast(buffer[6]);
 }
 
 const registers: *Registers = @ptrFromInt(0x88);
