@@ -6,6 +6,12 @@ export const i2c1 = @import("stm32u585xx").i2c1;
 const I2c = @import("stm32u585xx").I2c;
 const Bme280 = @import("Bme280");
 
+fn bme280_read(register_address: u8, receive_buffer: []u8) void {
+    i2c1.readMultiplePolling(bme280.addr.?, register_address, receive_buffer);
+}
+
+var bme280: Bme280 = .{ .addr = @intFromEnum(Bme280.I2c_addr.@"0x77"), .bme280_read_func = bme280_read };
+
 pub fn main() void {
     core_cm33.enableIrq();
     clockConfig();
@@ -13,32 +19,9 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    const bme280_address: u8 = 0x77;
-    var id: u8 = 0;
-    var buff = [_]u8{0} ** 3;
-
-    var bme280: Bme280 = .{ .i2c_addr = .@"0x77", .bme280_read_func = bme280_read };
-
-    id = i2c1.readPolling(bme280_address, 0xd0);
-    i2c1.readMultiplePolling(bme280_address, 0xe4, &buff);
-
-    const dig_H4_lsb = @as(i16, buff[1] & 0xf);
-    const dig_H4_msb = @as(i16, buff[0]) << 4;
-    const dig_H4 = dig_H4_msb | dig_H4_lsb;
-    _ = dig_H4;
-
-    const dig_H5_lsb = (@as(i16, buff[1]) & 0xf0) >> 4;
-    const dig_H5_msb = @as(i16, buff[2]) << 4;
-    const dig_H5 = dig_H5_msb | dig_H5_lsb;
-    _ = dig_H5;
-
     Bme280.ReadCalibration(&bme280);
 
     while (true) {}
-}
-
-fn bme280_read(target_address: u8, register_address: u8, receive_buffer: []u8) void {
-    i2c1.readMultiplePolling(target_address, register_address, receive_buffer);
 }
 
 fn clockConfig() void {

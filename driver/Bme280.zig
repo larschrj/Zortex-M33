@@ -1,3 +1,7 @@
+const registers: *Registers = @ptrFromInt(0x88);
+
+const Bme280 = @This();
+
 pub const Registers = packed struct {
     dig_T1: u16,
     dig_T2: i16,
@@ -113,21 +117,26 @@ pub const Calibration = struct {
     dig_H6: i8 = 0,
 };
 
-const I2c_addr = enum(u8) {
+pub const I2c_addr = enum(u8) {
     @"0x76" = 0x76,
     @"0x77" = 0x77,
 };
 
-const Bme280ReadFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
+const Bme280ReadFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 
-const Bme280WriteFunc = ?*const fn (dev_address: u8, register_address: u8, register_data: []u8) void;
+const Bme280WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
+
+addr: ?u8 = null,
+bme280_read_func: Bme280ReadFunc = null,
+bme280_write_func: Bme280WriteFunc = null,
+calibration: Calibration = undefined,
 
 pub fn ReadCalibration(bme280: *@This()) void {
     var buffer = [_]u8{0} ** 24;
     var reg_addr: u8 = 0;
 
     reg_addr = @intFromPtr(&registers.dig_T1);
-    bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), reg_addr, buffer[0..24]);
+    bme280.bme280_read_func.?(reg_addr, buffer[0..24]);
 
     bme280.calibration.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
     bme280.calibration.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
@@ -143,11 +152,11 @@ pub fn ReadCalibration(bme280: *@This()) void {
     bme280.calibration.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
 
     reg_addr = @intFromPtr(&registers.dig_H1);
-    bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), reg_addr, buffer[0..1]);
+    bme280.bme280_read_func.?(reg_addr, buffer[0..1]);
     bme280.calibration.dig_H1 = buffer[0];
 
     reg_addr = @intFromPtr(&registers.dig_H2);
-    bme280.bme280_read_func.?(@intFromEnum(bme280.i2c_addr.?), reg_addr, buffer[0..7]);
+    bme280.bme280_read_func.?(reg_addr, buffer[0..7]);
     bme280.calibration.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
     bme280.calibration.dig_H3 = buffer[2];
     bme280.calibration.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
@@ -155,16 +164,8 @@ pub fn ReadCalibration(bme280: *@This()) void {
     bme280.calibration.dig_H6 = @bitCast(buffer[6]);
 }
 
-const registers: *Registers = @ptrFromInt(0x88);
-
-i2c_addr: ?I2c_addr = null,
-bme280_read_func: Bme280ReadFunc = null,
-bme280_write_func: Bme280WriteFunc = null,
-calibration: Calibration = .{},
-
 test "Bme280 last register offset/address" {
     const std = @import("std");
-    const Bme280 = @This();
 
     const hum_lsb_offset = @offsetOf(Bme280.Registers, "hum_lsb");
     try std.testing.expect(hum_lsb_offset == 118);
