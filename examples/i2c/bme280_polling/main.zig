@@ -10,7 +10,15 @@ fn bme280_read(register_address: u8, receive_buffer: []u8) void {
     i2c1.readMultiplePolling(bme280.addr.?, register_address, receive_buffer);
 }
 
-var bme280: Bme280 = .{ .addr = @intFromEnum(Bme280.I2c_addr.@"0x77"), .bme280_read_func = bme280_read };
+fn bme280_write(register_address: u8, transmit_buffer: []u8) void {
+    i2c1.writeMultiplePolling(bme280.addr.?, register_address, transmit_buffer);
+}
+
+var bme280: Bme280 = .{
+    .addr = @intFromEnum(Bme280.I2c_addr.@"0x77"),
+    .bme280_read_func = bme280_read,
+    .bme280_write_func = bme280_write,
+};
 
 pub fn main() void {
     core_cm33.enableIrq();
@@ -19,8 +27,14 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    Bme280.ReadCalibration(&bme280);
+    bme280.ReadCalibration();
+    var mode = bme280.GetMode();
+    mode = bme280.SetMode(.normal);
 
+    var osrs_p: Bme280.Registers.Osrs = .oversample_1;
+    osrs_p = bme280.SetPressOversample(osrs_p);
+
+    mode = bme280.SetMode(.sleep);
     while (true) {}
 }
 

@@ -35,7 +35,7 @@ pub const Registers = packed struct {
     _reserved15: u32,
     _reserved16: u16,
     _reserved17: u8,
-    reset: u8 = 0x0,
+    reset: Reset = .readout,
     dig_H2: i16,
     dig_H3: u8,
     dig_H4: i12,
@@ -60,8 +60,13 @@ pub const Registers = packed struct {
     hum_msb: u8 = 0x80,
     hum_lsb: u8 = 0x00,
 
-    const Ctrl_hum = packed struct(u8) {
-        osrs_h: u3 = 0,
+    pub const Reset = enum(u8) {
+        readout = 0x00,
+        reset = 0xb6,
+    };
+
+    pub const Ctrl_hum = packed struct(u8) {
+        osrs_h: Osrs = .skip,
         _reserved0: u5 = 0,
     };
 
@@ -72,17 +77,56 @@ pub const Registers = packed struct {
         _reserved1: u4 = 0,
     };
 
-    const Ctrl_meas = packed struct(u8) {
-        mode: u2 = 0,
-        osrs_p: u3 = 0,
-        osrs_t: u3 = 0,
+    pub const Ctrl_meas = packed struct(u8) {
+        mode: Mode = .sleep,
+        osrs_p: Osrs = .skip,
+        osrs_t: Osrs = .skip,
+
+        const Mode = enum(u2) {
+            sleep = 0b00,
+            normal = 0b11,
+            forced = 0b01,
+        };
     };
 
-    const Config = packed struct(u8) {
-        spi3w_en: u1 = 0,
+    pub const Osrs = enum(u3) {
+        skip = 0b000,
+        oversample_1 = 0b001,
+        oversample_2 = 0b010,
+        oversample_4 = 0b011,
+        oversample_8 = 0b100,
+        oversample_16 = 0b101,
+    };
+
+    pub const Config = packed struct(u8) {
+        spi3w_en: Spi3w_en = .disable,
         _reserved0: u1 = 0,
-        filter: u3 = 0,
-        t_sb: u3 = 0,
+        filter: Filter = .off,
+        t_sb: T_sb = .@"0.5ms",
+
+        pub const Spi3w_en = enum(u1) {
+            disable = 0b0,
+            enable = 0b1,
+        };
+
+        pub const Filter = enum(u3) {
+            off = 0b000,
+            @"2" = 0b001,
+            @"4" = 0b010,
+            @"8" = 0b011,
+            @"16" = 0b100,
+        };
+
+        pub const T_sb = enum(u3) {
+            @"0.5ms" = 0b000,
+            @"62.5ms" = 0b001,
+            @"125ms" = 0b010,
+            @"250ms" = 0b011,
+            @"500ms" = 0b100,
+            @"1000ms" = 0b101,
+            @"10ms" = 0b110,
+            @"20ms" = 0b111,
+        };
     };
 
     const Press_xlsb = packed struct(u8) {
@@ -137,7 +181,6 @@ pub fn ReadCalibration(bme280: *@This()) void {
 
     reg_addr = @intFromPtr(&registers.dig_T1);
     bme280.bme280_read_func.?(reg_addr, buffer[0..24]);
-
     bme280.calibration.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
     bme280.calibration.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
     bme280.calibration.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
@@ -162,6 +205,80 @@ pub fn ReadCalibration(bme280: *@This()) void {
     bme280.calibration.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
     bme280.calibration.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
     bme280.calibration.dig_H6 = @bitCast(buffer[6]);
+}
+
+pub fn GetMode(bme280: *Bme280) Registers.Ctrl_meas.Mode {
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas.mode;
+}
+
+pub fn SetMode(bme280: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_meas.Mode {
+    // Read ctrl_meas
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+
+    // Write mode
+    var ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    ctrl_meas.mode = mode;
+    buffer[0] = @bitCast(ctrl_meas);
+    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+
+    // Read and return mode
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas.mode;
+}
+
+pub fn GetTempOversample(bme280: *Bme280) Registers.Osrs {
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+
+    const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas.osrs_t;
+}
+
+pub fn SetTempOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+    // Read ctrl_meas
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    var ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+
+    // Write pressure oversample
+    ctrl_meas.osrs_t = osrs;
+    buffer[0] = @bitCast(ctrl_meas);
+    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+
+    // Read pressure oversample
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas.osrs_t;
+}
+
+pub fn GetPressOversample(bme280: *Bme280) Registers.Osrs {
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+
+    const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas.osrs_p;
+}
+
+pub fn SetPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+    // Read ctrl_meas
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    var ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+
+    // Write pressure oversample
+    ctrl_meas.osrs_p = osrs;
+    buffer[0] = @bitCast(ctrl_meas);
+    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+
+    // Read pressure oversample
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas.osrs_p;
 }
 
 test "Bme280 last register offset/address" {
