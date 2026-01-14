@@ -175,7 +175,7 @@ bme280_read_func: Bme280ReadFunc = null,
 bme280_write_func: Bme280WriteFunc = null,
 calibration: Calibration = undefined,
 
-pub fn ReadCalibration(bme280: *@This()) void {
+pub fn readCalibration(bme280: *@This()) void {
     var buffer = [_]u8{0} ** 24;
     var reg_addr: u8 = 0;
 
@@ -207,14 +207,14 @@ pub fn ReadCalibration(bme280: *@This()) void {
     bme280.calibration.dig_H6 = @bitCast(buffer[6]);
 }
 
-pub fn GetMode(bme280: *Bme280) Registers.Ctrl_meas.Mode {
+pub fn getMode(bme280: *Bme280) Registers.Ctrl_meas.Mode {
     var buffer: [1]u8 = .{0};
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
     const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
     return ctrl_meas.mode;
 }
 
-pub fn SetMode(bme280: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_meas.Mode {
+pub fn setMode(bme280: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_meas.Mode {
     // Read ctrl_meas
     var buffer: [1]u8 = .{0};
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
@@ -231,15 +231,14 @@ pub fn SetMode(bme280: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_m
     return ctrl_meas.mode;
 }
 
-pub fn GetTempOversample(bme280: *Bme280) Registers.Osrs {
+pub fn getTempOversample(bme280: *Bme280) Registers.Osrs {
     var buffer: [1]u8 = .{0};
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-
     const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
     return ctrl_meas.osrs_t;
 }
 
-pub fn SetTempOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+pub fn setTempOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
     // Read ctrl_meas
     var buffer: [1]u8 = .{0};
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
@@ -256,15 +255,14 @@ pub fn SetTempOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
     return ctrl_meas.osrs_t;
 }
 
-pub fn GetPressOversample(bme280: *Bme280) Registers.Osrs {
+pub fn getPressOversample(bme280: *Bme280) Registers.Osrs {
     var buffer: [1]u8 = .{0};
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-
     const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
     return ctrl_meas.osrs_p;
 }
 
-pub fn SetPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+pub fn setPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
     // Read ctrl_meas
     var buffer: [1]u8 = .{0};
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
@@ -279,6 +277,42 @@ pub fn SetPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs 
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
     ctrl_meas = @bitCast(buffer[0]);
     return ctrl_meas.osrs_p;
+}
+
+pub fn getHumOversample(bme280: *Bme280) Registers.Osrs {
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+    const ctrl_hum: Registers.Ctrl_hum = @bitCast(buffer[0]);
+    return ctrl_hum.osrs_h;
+}
+
+pub fn setHumOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+    // Read ctrl_meas
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+    var ctrl_hum: Registers.Ctrl_hum = @bitCast(buffer[0]);
+
+    // Write pressure oversample
+    ctrl_hum.osrs_h = osrs;
+    buffer[0] = @bitCast(ctrl_hum);
+    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+
+    // Read pressure oversample
+    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+    ctrl_hum = @bitCast(buffer[0]);
+    return ctrl_hum.osrs_h;
+}
+
+pub fn getStatus(bme280: *Bme280) Registers.Status {
+    var buffer: [1]u8 = .{0};
+    bme280.bme280_read_func.?(@intFromPtr(&registers.status), &buffer);
+    const status: Registers.Status = @bitCast(buffer[0]);
+    return status;
+}
+
+pub fn getRawTemp(bme280: *Bme280) void {
+    var buffer: [3]u8 = .{ 0, 0, 0 };
+    bme280.bme280_read_func.?(@intFromPtr(&registers.temp_lsb), buffer[0..1]);
 }
 
 test "Bme280 last register offset/address" {

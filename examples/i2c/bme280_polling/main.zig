@@ -27,14 +27,17 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    bme280.ReadCalibration();
-    var mode = bme280.GetMode();
-    mode = bme280.SetMode(.normal);
+    bme280.readCalibration();
+    var mode = bme280.getMode();
+    mode = bme280.setMode(.normal);
 
     var osrs_p: Bme280.Registers.Osrs = .oversample_1;
-    osrs_p = bme280.SetPressOversample(osrs_p);
+    osrs_p = bme280.setPressOversample(osrs_p);
 
-    mode = bme280.SetMode(.sleep);
+    mode = bme280.setMode(.sleep);
+    const status = bme280.getStatus();
+    _ = status;
+
     while (true) {}
 }
 
