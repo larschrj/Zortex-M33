@@ -176,7 +176,7 @@ bme280_write_func: Bme280WriteFunc = null,
 calibration: Calibration = undefined,
 
 pub fn readCalibration(bme280: *@This()) void {
-    var buffer = [_]u8{0} ** 24;
+    var buffer: [24]u8 = .{0} ** 24;
     var reg_addr: u8 = 0;
 
     reg_addr = @intFromPtr(&registers.dig_T1);
@@ -310,9 +310,10 @@ pub fn getStatus(bme280: *Bme280) Registers.Status {
     return status;
 }
 
-pub fn getRawTemp(bme280: *Bme280) void {
-    var buffer: [3]u8 = .{ 0, 0, 0 };
-    bme280.bme280_read_func.?(@intFromPtr(&registers.temp_lsb), buffer[0..1]);
+pub fn getSensorValues(bme280: *Bme280) [8]u8 {
+    var buffer: [8]u8 = .{0} ** 8;
+    bme280.bme280_read_func.?(@intFromPtr(&registers.press_msb), &buffer);
+    return buffer;
 }
 
 test "Bme280 last register offset/address" {

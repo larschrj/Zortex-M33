@@ -35,8 +35,12 @@ pub fn main() void {
     osrs_p = bme280.setPressOversample(osrs_p);
 
     mode = bme280.setMode(.sleep);
+
     const status = bme280.getStatus();
     _ = status;
+
+    const raw = bme280.getSensorValues();
+    _ = raw;
 
     while (true) {}
 }
