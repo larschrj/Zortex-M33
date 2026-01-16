@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const mode = b.standardOptimizeOption(.{});
+    const mode = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseSafe });
     const arch = std.Target.Cpu.Arch.thumb;
     const os = std.Target.Os.Tag.freestanding;
     const abi = std.Target.Abi.eabihf;
@@ -27,6 +27,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
 
     const core_cm33_stm32u585xx = b.addModule("core_cm33", .{
@@ -34,6 +35,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
     core_cm33_stm32u585xx.addImport("irq", irq_stm32u585xx);
 
@@ -42,6 +44,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
     stm32u585xx.addImport("core_cm33", core_cm33_stm32u585xx);
 
@@ -53,6 +56,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
 
     //*******************************************************//
@@ -63,6 +67,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
     blinky_root_module.addImport("stm32u585xx", stm32u585xx);
     var blinky_exe = b.addExecutable(.{
@@ -82,6 +87,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
     cordic_root_module.addImport("stm32u585xx", stm32u585xx);
     const cordic_exe = b.addExecutable(.{
@@ -101,6 +107,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
     i2c_bme280_polling_root_module.addImport("stm32u585xx", stm32u585xx);
     i2c_bme280_polling_root_module.addImport("Bme280", Bme280);
@@ -124,6 +131,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = mode,
         .unwind_tables = .none,
+        .strip = false,
     });
     b_u585_i2c_hts221_polling_root_module.addImport("stm32u585xx", stm32u585xx);
     const b_u585_i2c_hts221_polling_exe = b.addExecutable(.{

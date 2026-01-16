@@ -1,3 +1,4 @@
+const std = @import("std");
 const core_cm33 = @import("stm32u585xx").core_cm33;
 export const rcc = @import("stm32u585xx").rcc;
 export const gpiob = @import("stm32u585xx").gpiob;
@@ -21,6 +22,7 @@ var bme280: Bme280 = .{
 };
 
 pub fn main() void {
+    std.mem.doNotOptimizeAway(&bme280);
     core_cm33.enableIrq();
     clockConfig();
     gpioConfig();
@@ -40,7 +42,7 @@ pub fn main() void {
     _ = status;
 
     const raw = bme280.getSensorValues();
-    _ = raw;
+    std.mem.doNotOptimizeAway(&raw);
 
     while (true) {}
 }
