@@ -207,75 +207,53 @@ pub fn readCalibration(bme280: *@This()) void {
     bme280.calibration.dig_H6 = @bitCast(buffer[6]);
 }
 
-pub fn getMode(bme280: *Bme280) Registers.Ctrl_meas.Mode {
-    var buffer: [1]u8 = .{0};
+pub fn getCtrlMeas(bme280: *Bme280) Registers.Ctrl_meas {
+    var buffer: [1]u8 = undefined;
     bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
     const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    return ctrl_meas;
+}
+
+pub fn setCtrlMeas(bme280: *Bme280, ctrl_meas: Registers.Ctrl_meas) Registers.Ctrl_meas {
+    var buffer: [1]u8 = undefined;
+    buffer[0] = @bitCast(ctrl_meas);
+    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    return getCtrlMeas(bme280);
+}
+
+pub fn getMode(bme280: *Bme280) Registers.Ctrl_meas.Mode {
+    const ctrl_meas = getCtrlMeas(bme280);
     return ctrl_meas.mode;
 }
 
 pub fn setMode(bme280: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_meas.Mode {
-    // Read ctrl_meas
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-
-    // Write mode
-    var ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    var ctrl_meas = getCtrlMeas(bme280);
     ctrl_meas.mode = mode;
-    buffer[0] = @bitCast(ctrl_meas);
-    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-
-    // Read and return mode
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    ctrl_meas = @bitCast(buffer[0]);
+    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
     return ctrl_meas.mode;
 }
 
 pub fn getTempOversample(bme280: *Bme280) Registers.Osrs {
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    const ctrl_meas = getCtrlMeas(bme280);
     return ctrl_meas.osrs_t;
 }
 
 pub fn setTempOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
-    // Read ctrl_meas
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    var ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
-
-    // Write pressure oversample
+    var ctrl_meas = getCtrlMeas(bme280);
     ctrl_meas.osrs_t = osrs;
-    buffer[0] = @bitCast(ctrl_meas);
-    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-
-    // Read pressure oversample
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    ctrl_meas = @bitCast(buffer[0]);
+    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
     return ctrl_meas.osrs_t;
 }
 
 pub fn getPressOversample(bme280: *Bme280) Registers.Osrs {
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
+    const ctrl_meas = getCtrlMeas(bme280);
     return ctrl_meas.osrs_p;
 }
 
 pub fn setPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
-    // Read ctrl_meas
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    var ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
-
-    // Write pressure oversample
+    var ctrl_meas = getCtrlMeas(bme280);
     ctrl_meas.osrs_p = osrs;
-    buffer[0] = @bitCast(ctrl_meas);
-    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-
-    // Read pressure oversample
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    ctrl_meas = @bitCast(buffer[0]);
+    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
     return ctrl_meas.osrs_p;
 }
 
@@ -302,6 +280,10 @@ pub fn setHumOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
     ctrl_hum = @bitCast(buffer[0]);
     return ctrl_hum.osrs_h;
 }
+
+//pub fn setOversample(bme280: *Bme280, press_osrs: Registers.Osrs, temp_osrs: Registers.Osrs, hum_osrs: Registers.Osrs) [3]Registers.Osrs {
+//
+//}
 
 pub fn getStatus(bme280: *Bme280) Registers.Status {
     var buffer: [1]u8 = .{0};
