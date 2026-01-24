@@ -17,8 +17,8 @@ fn bme280_write(register_address: u8, transmit_buffer: []u8) void {
 
 var bme280: Bme280 = .{
     .addr = @intFromEnum(Bme280.I2c_addr.@"0x77"),
-    .bme280_read_func = bme280_read,
-    .bme280_write_func = bme280_write,
+    .read_func = bme280_read,
+    .write_func = bme280_write,
 };
 
 pub fn main() void {
@@ -29,20 +29,17 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    bme280.readCalibration();
-    var mode = bme280.getMode();
-    mode = bme280.setMode(.normal);
+    bme280.calibration = bme280.readCalibration();
+    var mode = bme280.setMode(.normal);
+    std.mem.doNotOptimizeAway(&mode);
 
-    var osrs_p: Bme280.Registers.Osrs = .oversample_1;
-    osrs_p = bme280.setPressOversample(osrs_p);
-
-    mode = bme280.setMode(.sleep);
+    _ = bme280.setOversample(.oversample_1, .oversample_1, .oversample_1);
 
     const status = bme280.getStatus();
     _ = status;
 
-    const raw = bme280.getSensorValues();
-    std.mem.doNotOptimizeAway(&raw);
+    const sensors = bme280.getSensorValues();
+    std.mem.doNotOptimizeAway(&sensors);
 
     while (true) {}
 }

@@ -1,4 +1,4 @@
-const registers: *Registers = @ptrFromInt(0x88);
+const registers: *volatile Registers = @ptrFromInt(0x88);
 
 const Bme280 = @This();
 
@@ -129,12 +129,12 @@ pub const Registers = packed struct {
         };
     };
 
-    const Press_xlsb = packed struct(u8) {
+    pub const Press_xlsb = packed struct(u8) {
         _reserved0: u4 = 0,
         press_xlsb: u4 = 0,
     };
 
-    const Temp_xlsb = packed struct(u8) {
+    pub const Temp_xlsb = packed struct(u8) {
         _reserved0: u4 = 0,
         temp_xlsb: u4 = 0,
     };
@@ -161,6 +161,17 @@ pub const Calibration = struct {
     dig_H6: i8 = 0,
 };
 
+pub const Sensors = packed struct(u64) {
+    press_msb: u8 = 0x80,
+    press_lsb: u8 = 0x00,
+    press_xlsb: Registers.Press_xlsb,
+    temp_msb: u8 = 0x80,
+    temp_lsb: u8 = 0x00,
+    temp_xlsb: Registers.Temp_xlsb,
+    hum_msb: u8 = 0x80,
+    hum_lsb: u8 = 0x00,
+};
+
 pub const I2c_addr = enum(u8) {
     @"0x76" = 0x76,
     @"0x77" = 0x77,
@@ -171,45 +182,48 @@ const Bme280ReadFunc = ?*const fn (register_address: u8, register_data: []u8) vo
 const Bme280WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 
 addr: ?u8 = null,
-bme280_read_func: Bme280ReadFunc = null,
-bme280_write_func: Bme280WriteFunc = null,
+read_func: Bme280ReadFunc = null,
+write_func: Bme280WriteFunc = null,
 calibration: Calibration = undefined,
 
-pub fn readCalibration(bme280: *@This()) void {
+pub fn readCalibration(bme280: *@This()) Calibration {
     var buffer: [24]u8 = .{0} ** 24;
     var reg_addr: u8 = 0;
+    var cal: Calibration = undefined;
 
     reg_addr = @intFromPtr(&registers.dig_T1);
-    bme280.bme280_read_func.?(reg_addr, buffer[0..24]);
-    bme280.calibration.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
-    bme280.calibration.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
-    bme280.calibration.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
-    bme280.calibration.dig_P1 = (@as(u16, buffer[7]) << 8) | @as(u16, buffer[6]);
-    bme280.calibration.dig_P2 = (@as(i16, buffer[9]) << 8) | @as(i16, buffer[8]);
-    bme280.calibration.dig_P3 = (@as(i16, buffer[11]) << 8) | @as(i16, buffer[10]);
-    bme280.calibration.dig_P4 = (@as(i16, buffer[13]) << 8) | @as(i16, buffer[12]);
-    bme280.calibration.dig_P5 = (@as(i16, buffer[15]) << 8) | @as(i16, buffer[14]);
-    bme280.calibration.dig_P6 = (@as(i16, buffer[17]) << 8) | @as(i16, buffer[16]);
-    bme280.calibration.dig_P7 = (@as(i16, buffer[19]) << 8) | @as(i16, buffer[18]);
-    bme280.calibration.dig_P8 = (@as(i16, buffer[21]) << 8) | @as(i16, buffer[20]);
-    bme280.calibration.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
+    bme280.read_func.?(reg_addr, buffer[0..24]);
+    cal.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
+    cal.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
+    cal.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
+    cal.dig_P1 = (@as(u16, buffer[7]) << 8) | @as(u16, buffer[6]);
+    cal.dig_P2 = (@as(i16, buffer[9]) << 8) | @as(i16, buffer[8]);
+    cal.dig_P3 = (@as(i16, buffer[11]) << 8) | @as(i16, buffer[10]);
+    cal.dig_P4 = (@as(i16, buffer[13]) << 8) | @as(i16, buffer[12]);
+    cal.dig_P5 = (@as(i16, buffer[15]) << 8) | @as(i16, buffer[14]);
+    cal.dig_P6 = (@as(i16, buffer[17]) << 8) | @as(i16, buffer[16]);
+    cal.dig_P7 = (@as(i16, buffer[19]) << 8) | @as(i16, buffer[18]);
+    cal.dig_P8 = (@as(i16, buffer[21]) << 8) | @as(i16, buffer[20]);
+    cal.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
 
     reg_addr = @intFromPtr(&registers.dig_H1);
-    bme280.bme280_read_func.?(reg_addr, buffer[0..1]);
-    bme280.calibration.dig_H1 = buffer[0];
+    bme280.read_func.?(reg_addr, buffer[0..1]);
+    cal.dig_H1 = buffer[0];
 
     reg_addr = @intFromPtr(&registers.dig_H2);
-    bme280.bme280_read_func.?(reg_addr, buffer[0..7]);
-    bme280.calibration.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
-    bme280.calibration.dig_H3 = buffer[2];
-    bme280.calibration.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
-    bme280.calibration.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
-    bme280.calibration.dig_H6 = @bitCast(buffer[6]);
+    bme280.read_func.?(reg_addr, buffer[0..7]);
+    cal.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
+    cal.dig_H3 = buffer[2];
+    cal.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
+    cal.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
+    cal.dig_H6 = @bitCast(buffer[6]);
+
+    return cal;
 }
 
 pub fn getCtrlMeas(bme280: *Bme280) Registers.Ctrl_meas {
     var buffer: [1]u8 = undefined;
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    bme280.read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
     const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
     return ctrl_meas;
 }
@@ -217,7 +231,7 @@ pub fn getCtrlMeas(bme280: *Bme280) Registers.Ctrl_meas {
 pub fn setCtrlMeas(bme280: *Bme280, ctrl_meas: Registers.Ctrl_meas) Registers.Ctrl_meas {
     var buffer: [1]u8 = undefined;
     buffer[0] = @bitCast(ctrl_meas);
-    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    bme280.write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
     return getCtrlMeas(bme280);
 }
 
@@ -257,46 +271,57 @@ pub fn setPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs 
     return ctrl_meas.osrs_p;
 }
 
-pub fn getHumOversample(bme280: *Bme280) Registers.Osrs {
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+pub fn getCtrlHum(bme280: *Bme280) Registers.Ctrl_hum {
+    var buffer: [1]u8 = undefined;
+    bme280.read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
     const ctrl_hum: Registers.Ctrl_hum = @bitCast(buffer[0]);
+    return ctrl_hum;
+}
+
+pub fn setCtrlHum(bme280: *Bme280, ctrl_hum: Registers.Ctrl_hum) Registers.Ctrl_hum {
+    var buffer: [1]u8 = undefined;
+    buffer[0] = @bitCast(ctrl_hum);
+    bme280.write_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+    return getCtrlHum(bme280);
+}
+
+pub fn getHumOversample(bme280: *Bme280) Registers.Osrs {
+    const ctrl_hum = getCtrlHum(bme280);
     return ctrl_hum.osrs_h;
 }
 
 pub fn setHumOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
-    // Read ctrl_meas
-    var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
-    var ctrl_hum: Registers.Ctrl_hum = @bitCast(buffer[0]);
-
-    // Write pressure oversample
+    var ctrl_hum = getCtrlHum(bme280);
     ctrl_hum.osrs_h = osrs;
-    buffer[0] = @bitCast(ctrl_hum);
-    bme280.bme280_write_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
-
-    // Read pressure oversample
-    bme280.bme280_read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
-    ctrl_hum = @bitCast(buffer[0]);
+    ctrl_hum = setCtrlHum(bme280, ctrl_hum);
     return ctrl_hum.osrs_h;
 }
 
-//pub fn setOversample(bme280: *Bme280, press_osrs: Registers.Osrs, temp_osrs: Registers.Osrs, hum_osrs: Registers.Osrs) [3]Registers.Osrs {
-//
-//}
+pub fn setOversample(bme280: *Bme280, press_osrs: Registers.Osrs, temp_osrs: Registers.Osrs, hum_osrs: Registers.Osrs) [3]Registers.Osrs {
+    const h = setHumOversample(bme280, hum_osrs);
+    var ctrl_meas = getCtrlMeas(bme280);
+    ctrl_meas.osrs_p = press_osrs;
+    ctrl_meas.osrs_t = temp_osrs;
+    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
+
+    return .{ ctrl_meas.osrs_p, ctrl_meas.osrs_t, h };
+}
 
 pub fn getStatus(bme280: *Bme280) Registers.Status {
     var buffer: [1]u8 = .{0};
-    bme280.bme280_read_func.?(@intFromPtr(&registers.status), &buffer);
+    bme280.read_func.?(@intFromPtr(&registers.status), &buffer);
     const status: Registers.Status = @bitCast(buffer[0]);
     return status;
 }
 
-pub fn getSensorValues(bme280: *Bme280) [8]u8 {
-    var buffer: [8]u8 = .{0} ** 8;
-    bme280.bme280_read_func.?(@intFromPtr(&registers.press_msb), &buffer);
-    return buffer;
+pub fn getSensorValues(bme280: *Bme280) Sensors {
+    var buffer: [8]u8 = undefined;
+    bme280.read_func.?(@intFromPtr(&registers.press_msb), &buffer);
+    const sensors: Sensors = @bitCast(buffer);
+    return sensors;
 }
+
+//pub fn compensate_temperature(sensors: Sensors) i32 {}
 
 test "Bme280 last register offset/address" {
     const std = @import("std");
