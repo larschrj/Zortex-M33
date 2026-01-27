@@ -70,7 +70,7 @@ pub const Registers = packed struct {
         _reserved0: u5 = 0,
     };
 
-    const Status = packed struct(u8) {
+    pub const Status = packed struct(u8) {
         im_update: u1 = 0,
         _reserved0: u2 = 0,
         measuring: u1 = 0,
@@ -82,7 +82,7 @@ pub const Registers = packed struct {
         osrs_p: Osrs = .skip,
         osrs_t: Osrs = .skip,
 
-        const Mode = enum(u2) {
+        pub const Mode = enum(u2) {
             sleep = 0b00,
             normal = 0b11,
             forced = 0b01,
@@ -170,6 +170,13 @@ pub const Sensors = packed struct(u64) {
     temp_xlsb: Registers.Temp_xlsb,
     hum_msb: u8 = 0x80,
     hum_lsb: u8 = 0x00,
+};
+
+pub const Temperature = struct {
+    // temperature/100 = degC
+    temperature: i32,
+    // Used in pressure and humidity calculations
+    temperature_fine: i32,
 };
 
 pub const I2c_addr = enum(u8) {
@@ -321,7 +328,33 @@ pub fn getSensorValues(bme280: *Bme280) Sensors {
     return sensors;
 }
 
-//pub fn compensate_temperature(sensors: Sensors) i32 {}
+// Temperature in Celcius
+// Return value = temperature*100. For example 2054 = 20.54 degC
+pub fn compensate_temperature(bme280: *Bme280, sensors: Sensors) Temperature {
+    // Raw temperature reading from ADC is 20 bits
+    var temp_uncomp: i32 = 0;
+    temp_uncomp = temp_uncomp | @as(i32, sensors.temp_xlsb.temp_xlsb);
+    temp_uncomp = temp_uncomp | (@as(i32, sensors.temp_lsb) << 4);
+    temp_uncomp = temp_uncomp | (@as(i32, sensors.temp_msb) << 12);
+
+    var var1: i32 = @divTrunc(temp_uncomp, 8);
+    var1 = var1 -| @as(i32, bme280.calibration.dig_T1) *| 2;
+    var1 = (var1 *| @as(i32, bme280.calibration.dig_T2));
+    var1 = @divTrunc(var1, 2048);
+
+    var var2: i32 = @divTrunc(temp_uncomp, 16);
+    var2 = var2 -| @as(i32, bme280.calibration.dig_T1);
+    var2 = @divTrunc(var2 *| var2, 4096);
+    var2 = var2 *| @as(i32, bme280.calibration.dig_T3);
+    var2 = @divTrunc(var2, 16384);
+
+    // High resolution temperature used in pressure and humidity calculations
+    const temp_fine: i32 = var1 +| var2;
+
+    const temp: i32 = @divTrunc(temp_fine *| 5 +| 128, 256);
+
+    return .{ .temperature = temp, .temperature_fine = temp_fine };
+}
 
 test "Bme280 last register offset/address" {
     const std = @import("std");

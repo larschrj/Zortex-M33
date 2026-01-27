@@ -20,9 +20,17 @@ var bme280: Bme280 = .{
     .read_func = bme280_read,
     .write_func = bme280_write,
 };
+var mode: Bme280.Registers.Ctrl_meas.Mode = undefined;
+var status: Bme280.Registers.Status = undefined;
+var sensors: Bme280.Sensors = undefined;
+var temp: Bme280.Temperature = undefined;
 
 pub fn main() void {
     std.mem.doNotOptimizeAway(&bme280);
+    std.mem.doNotOptimizeAway(&mode);
+    std.mem.doNotOptimizeAway(&status);
+    std.mem.doNotOptimizeAway(&sensors);
+    std.mem.doNotOptimizeAway(&temp);
     core_cm33.enableIrq();
     clockConfig();
     gpioConfig();
@@ -30,18 +38,14 @@ pub fn main() void {
     sysTickConfig();
 
     bme280.calibration = bme280.readCalibration();
-    var mode = bme280.setMode(.normal);
-    std.mem.doNotOptimizeAway(&mode);
-
+    mode = bme280.setMode(.normal);
     _ = bme280.setOversample(.oversample_1, .oversample_1, .oversample_1);
+    status = bme280.getStatus();
 
-    const status = bme280.getStatus();
-    _ = status;
-
-    const sensors = bme280.getSensorValues();
-    std.mem.doNotOptimizeAway(&sensors);
-
-    while (true) {}
+    while (true) {
+        sensors = bme280.getSensorValues();
+        temp = bme280.compensate_temperature(sensors);
+    }
 }
 
 fn clockConfig() void {
