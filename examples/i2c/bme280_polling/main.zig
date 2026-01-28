@@ -23,7 +23,7 @@ var bme280: Bme280 = .{
 var mode: Bme280.Registers.Ctrl_meas.Mode = undefined;
 var status: Bme280.Registers.Status = undefined;
 var sensors: Bme280.Sensors = undefined;
-var temp: Bme280.Temperature = undefined;
+var temp: i32 = undefined;
 
 pub fn main() void {
     std.mem.doNotOptimizeAway(&bme280);
@@ -37,7 +37,7 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
-    bme280.calibration = bme280.readCalibration();
+    bme280.readCalibration();
     mode = bme280.setMode(.normal);
     _ = bme280.setOversample(.oversample_1, .oversample_1, .oversample_1);
     status = bme280.getStatus();

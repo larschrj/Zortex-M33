@@ -164,19 +164,12 @@ pub const Calibration = struct {
 pub const Sensors = packed struct(u64) {
     press_msb: u8 = 0x80,
     press_lsb: u8 = 0x00,
-    press_xlsb: Registers.Press_xlsb,
+    press_xlsb: Registers.Press_xlsb = .{},
     temp_msb: u8 = 0x80,
     temp_lsb: u8 = 0x00,
-    temp_xlsb: Registers.Temp_xlsb,
+    temp_xlsb: Registers.Temp_xlsb = .{},
     hum_msb: u8 = 0x80,
     hum_lsb: u8 = 0x00,
-};
-
-pub const Temperature = struct {
-    // temperature/100 = degC
-    temperature: i32,
-    // Used in pressure and humidity calculations
-    temperature_fine: i32,
 };
 
 pub const I2c_addr = enum(u8) {
@@ -192,14 +185,15 @@ addr: ?u8 = null,
 read_func: Bme280ReadFunc = null,
 write_func: Bme280WriteFunc = null,
 calibration: Calibration = undefined,
+temp_fine: i32 = undefined,
 
-pub fn readCalibration(bme280: *@This()) Calibration {
+pub fn readCalibration(self: *Bme280) void {
     var buffer: [24]u8 = .{0} ** 24;
     var reg_addr: u8 = 0;
-    var cal: Calibration = undefined;
+    var cal = self.calibration;
 
     reg_addr = @intFromPtr(&registers.dig_T1);
-    bme280.read_func.?(reg_addr, buffer[0..24]);
+    self.read_func.?(reg_addr, buffer[0..24]);
     cal.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
     cal.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
     cal.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
@@ -214,123 +208,121 @@ pub fn readCalibration(bme280: *@This()) Calibration {
     cal.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
 
     reg_addr = @intFromPtr(&registers.dig_H1);
-    bme280.read_func.?(reg_addr, buffer[0..1]);
+    self.read_func.?(reg_addr, buffer[0..1]);
     cal.dig_H1 = buffer[0];
 
     reg_addr = @intFromPtr(&registers.dig_H2);
-    bme280.read_func.?(reg_addr, buffer[0..7]);
+    self.read_func.?(reg_addr, buffer[0..7]);
     cal.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
     cal.dig_H3 = buffer[2];
     cal.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
     cal.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
     cal.dig_H6 = @bitCast(buffer[6]);
-
-    return cal;
 }
 
-pub fn getCtrlMeas(bme280: *Bme280) Registers.Ctrl_meas {
+pub fn getCtrlMeas(self: *Bme280) Registers.Ctrl_meas {
     var buffer: [1]u8 = undefined;
-    bme280.read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    self.read_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
     const ctrl_meas: Registers.Ctrl_meas = @bitCast(buffer[0]);
     return ctrl_meas;
 }
 
-pub fn setCtrlMeas(bme280: *Bme280, ctrl_meas: Registers.Ctrl_meas) Registers.Ctrl_meas {
+pub fn setCtrlMeas(self: *Bme280, ctrl_meas: Registers.Ctrl_meas) Registers.Ctrl_meas {
     var buffer: [1]u8 = undefined;
     buffer[0] = @bitCast(ctrl_meas);
-    bme280.write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
-    return getCtrlMeas(bme280);
+    self.write_func.?(@intFromPtr(&registers.ctrl_meas), &buffer);
+    return getCtrlMeas(self);
 }
 
-pub fn getMode(bme280: *Bme280) Registers.Ctrl_meas.Mode {
-    const ctrl_meas = getCtrlMeas(bme280);
+pub fn getMode(self: *Bme280) Registers.Ctrl_meas.Mode {
+    const ctrl_meas = getCtrlMeas(self);
     return ctrl_meas.mode;
 }
 
-pub fn setMode(bme280: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_meas.Mode {
-    var ctrl_meas = getCtrlMeas(bme280);
+pub fn setMode(self: *Bme280, mode: Registers.Ctrl_meas.Mode) Registers.Ctrl_meas.Mode {
+    var ctrl_meas = getCtrlMeas(self);
     ctrl_meas.mode = mode;
-    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
+    ctrl_meas = setCtrlMeas(self, ctrl_meas);
     return ctrl_meas.mode;
 }
 
-pub fn getTempOversample(bme280: *Bme280) Registers.Osrs {
-    const ctrl_meas = getCtrlMeas(bme280);
+pub fn getTempOversample(self: *Bme280) Registers.Osrs {
+    const ctrl_meas = getCtrlMeas(self);
     return ctrl_meas.osrs_t;
 }
 
-pub fn setTempOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
-    var ctrl_meas = getCtrlMeas(bme280);
+pub fn setTempOversample(self: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+    var ctrl_meas = getCtrlMeas(self);
     ctrl_meas.osrs_t = osrs;
-    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
+    ctrl_meas = setCtrlMeas(self, ctrl_meas);
     return ctrl_meas.osrs_t;
 }
 
-pub fn getPressOversample(bme280: *Bme280) Registers.Osrs {
-    const ctrl_meas = getCtrlMeas(bme280);
+pub fn getPressOversample(self: *Bme280) Registers.Osrs {
+    const ctrl_meas = getCtrlMeas(self);
     return ctrl_meas.osrs_p;
 }
 
-pub fn setPressOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
-    var ctrl_meas = getCtrlMeas(bme280);
+pub fn setPressOversample(self: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+    var ctrl_meas = getCtrlMeas(self);
     ctrl_meas.osrs_p = osrs;
-    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
+    ctrl_meas = setCtrlMeas(self, ctrl_meas);
     return ctrl_meas.osrs_p;
 }
 
-pub fn getCtrlHum(bme280: *Bme280) Registers.Ctrl_hum {
+pub fn getCtrlHum(self: *Bme280) Registers.Ctrl_hum {
     var buffer: [1]u8 = undefined;
-    bme280.read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+    self.read_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
     const ctrl_hum: Registers.Ctrl_hum = @bitCast(buffer[0]);
     return ctrl_hum;
 }
 
-pub fn setCtrlHum(bme280: *Bme280, ctrl_hum: Registers.Ctrl_hum) Registers.Ctrl_hum {
+pub fn setCtrlHum(self: *Bme280, ctrl_hum: Registers.Ctrl_hum) Registers.Ctrl_hum {
     var buffer: [1]u8 = undefined;
     buffer[0] = @bitCast(ctrl_hum);
-    bme280.write_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
-    return getCtrlHum(bme280);
+    self.write_func.?(@intFromPtr(&registers.ctrl_hum), &buffer);
+    return getCtrlHum(self);
 }
 
-pub fn getHumOversample(bme280: *Bme280) Registers.Osrs {
-    const ctrl_hum = getCtrlHum(bme280);
+pub fn getHumOversample(self: *Bme280) Registers.Osrs {
+    const ctrl_hum = getCtrlHum(self);
     return ctrl_hum.osrs_h;
 }
 
-pub fn setHumOversample(bme280: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
-    var ctrl_hum = getCtrlHum(bme280);
+pub fn setHumOversample(self: *Bme280, osrs: Registers.Osrs) Registers.Osrs {
+    var ctrl_hum = getCtrlHum(self);
     ctrl_hum.osrs_h = osrs;
-    ctrl_hum = setCtrlHum(bme280, ctrl_hum);
+    ctrl_hum = setCtrlHum(self, ctrl_hum);
     return ctrl_hum.osrs_h;
 }
 
-pub fn setOversample(bme280: *Bme280, press_osrs: Registers.Osrs, temp_osrs: Registers.Osrs, hum_osrs: Registers.Osrs) [3]Registers.Osrs {
-    const h = setHumOversample(bme280, hum_osrs);
-    var ctrl_meas = getCtrlMeas(bme280);
+pub fn setOversample(self: *Bme280, press_osrs: Registers.Osrs, temp_osrs: Registers.Osrs, hum_osrs: Registers.Osrs) [3]Registers.Osrs {
+    const h = setHumOversample(self, hum_osrs);
+    var ctrl_meas = getCtrlMeas(self);
     ctrl_meas.osrs_p = press_osrs;
     ctrl_meas.osrs_t = temp_osrs;
-    ctrl_meas = setCtrlMeas(bme280, ctrl_meas);
+    ctrl_meas = setCtrlMeas(self, ctrl_meas);
 
     return .{ ctrl_meas.osrs_p, ctrl_meas.osrs_t, h };
 }
 
-pub fn getStatus(bme280: *Bme280) Registers.Status {
+pub fn getStatus(self: *Bme280) Registers.Status {
     var buffer: [1]u8 = .{0};
-    bme280.read_func.?(@intFromPtr(&registers.status), &buffer);
+    self.read_func.?(@intFromPtr(&registers.status), &buffer);
     const status: Registers.Status = @bitCast(buffer[0]);
     return status;
 }
 
-pub fn getSensorValues(bme280: *Bme280) Sensors {
+pub fn getSensorValues(self: *Bme280) Sensors {
     var buffer: [8]u8 = undefined;
-    bme280.read_func.?(@intFromPtr(&registers.press_msb), &buffer);
+    self.read_func.?(@intFromPtr(&registers.press_msb), &buffer);
     const sensors: Sensors = @bitCast(buffer);
     return sensors;
 }
 
 // Temperature in Celcius
 // Return value = temperature*100. For example 2054 = 20.54 degC
-pub fn compensate_temperature(bme280: *Bme280, sensors: Sensors) Temperature {
+pub fn compensate_temperature(self: *Bme280, sensors: Sensors) i32 {
     // Raw temperature reading from ADC is 20 bits
     var temp_uncomp: i32 = 0;
     temp_uncomp = temp_uncomp | @as(i32, sensors.temp_xlsb.temp_xlsb);
@@ -338,27 +330,36 @@ pub fn compensate_temperature(bme280: *Bme280, sensors: Sensors) Temperature {
     temp_uncomp = temp_uncomp | (@as(i32, sensors.temp_msb) << 12);
 
     var var1: i32 = @divTrunc(temp_uncomp, 8);
-    var1 = var1 -| @as(i32, bme280.calibration.dig_T1) *| 2;
-    var1 = (var1 *| @as(i32, bme280.calibration.dig_T2));
+    var1 = var1 -| @as(i32, self.calibration.dig_T1) *| 2;
+    var1 = (var1 *| @as(i32, self.calibration.dig_T2));
     var1 = @divTrunc(var1, 2048);
 
     var var2: i32 = @divTrunc(temp_uncomp, 16);
-    var2 = var2 -| @as(i32, bme280.calibration.dig_T1);
+    var2 = var2 -| @as(i32, self.calibration.dig_T1);
     var2 = @divTrunc(var2 *| var2, 4096);
-    var2 = var2 *| @as(i32, bme280.calibration.dig_T3);
+    var2 = var2 *| @as(i32, self.calibration.dig_T3);
     var2 = @divTrunc(var2, 16384);
 
     // High resolution temperature used in pressure and humidity calculations
-    const temp_fine: i32 = var1 +| var2;
+    self.temp_fine = var1 +| var2;
 
-    const temp: i32 = @divTrunc(temp_fine *| 5 +| 128, 256);
+    const temp: i32 = @divTrunc(self.temp_fine *| 5 +| 128, 256);
 
-    return .{ .temperature = temp, .temperature_fine = temp_fine };
+    return temp;
 }
+
+//pub fn compensate_pressure(self: *Bme280, sensors: Sensors) {
+//
+//}
 
 test "Bme280 last register offset/address" {
     const std = @import("std");
 
     const hum_lsb_offset = @offsetOf(Bme280.Registers, "hum_lsb");
     try std.testing.expect(hum_lsb_offset == 118);
+}
+
+test "compensate_temperature" {
+    //const sensors: Sensors = .{ .temp_xlsb = .{ .temp_xlsb = 0 }, .temp_lsb = 0, .temp_msb = 0 };
+    //_ = sensors;
 }
