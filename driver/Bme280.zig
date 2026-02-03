@@ -184,8 +184,9 @@ const Bme280WriteFunc = ?*const fn (register_address: u8, register_data: []u8) v
 addr: ?u8 = null,
 read_func: Bme280ReadFunc = null,
 write_func: Bme280WriteFunc = null,
-calibration: Calibration = undefined,
-temp_fine: i32 = undefined,
+calibration: Calibration = .{},
+sensors: Sensors = .{},
+temp_fine: i32 = 0,
 
 pub fn readCalibration(self: *Bme280) void {
     var buffer: [24]u8 = .{0} ** 24;
@@ -313,21 +314,19 @@ pub fn getStatus(self: *Bme280) Registers.Status {
     return status;
 }
 
-pub fn getSensorValues(self: *Bme280) Sensors {
+pub fn getSensorValues(self: *Bme280) void {
     var buffer: [8]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.press_msb), &buffer);
-    const sensors: Sensors = @bitCast(buffer);
-    return sensors;
+    self.sensors = @bitCast(buffer);
 }
 
 // Temperature in Celcius
 // Return value = temperature*100. For example 2054 = 20.54 degC
-pub fn compensate_temperature(self: *Bme280, sensors: Sensors) i32 {
+pub fn compensate_temperature(self: *Bme280) i32 {
     // Raw temperature reading from ADC is 20 bits
-    var temp_uncomp: i32 = 0;
-    temp_uncomp = temp_uncomp | @as(i32, sensors.temp_xlsb.temp_xlsb);
-    temp_uncomp = temp_uncomp | (@as(i32, sensors.temp_lsb) << 4);
-    temp_uncomp = temp_uncomp | (@as(i32, sensors.temp_msb) << 12);
+    var temp_uncomp: i32 = @as(i32, self.sensors.temp_xlsb.temp_xlsb);
+    temp_uncomp = temp_uncomp | (@as(i32, self.sensors.temp_lsb) << 4);
+    temp_uncomp = temp_uncomp | (@as(i32, self.sensors.temp_msb) << 16);
 
     var var1: i32 = @divTrunc(temp_uncomp, 8);
     var1 = var1 -| @as(i32, self.calibration.dig_T1) *| 2;
@@ -348,9 +347,94 @@ pub fn compensate_temperature(self: *Bme280, sensors: Sensors) i32 {
     return temp;
 }
 
-//pub fn compensate_pressure(self: *Bme280, sensors: Sensors) {
-//
-//}
+// Pressure in Pa in Q24.8 fixed point format
+pub fn compensate_pressure(self: *Bme280) u32 {
+    const pressure_min: u32 = 30000;
+    const pressure_max: u32 = 110000;
+    var pressure: u32 = 0;
+
+    // Raw pressure reading from ADC is 20 bits
+    var press_uncomp: i32 = @as(i32, self.sensors.press_xlsb.press_xlsb);
+    press_uncomp = press_uncomp | (@as(i32, self.sensors.press_lsb) << 4);
+    press_uncomp = press_uncomp | (@as(i32, self.sensors.press_msb) << 16);
+
+    var var1: i32 = @divTrunc(self.temp_fine, 2) -| 64000;
+    var var2: i32 = @divTrunc((@divTrunc(var1, 4) *| @divTrunc(var1, 4)), 2048);
+    var2 = var2 *| @as(i32, self.calibration.dig_P6);
+    var2 = var2 +| (var1 * @as(i32, self.calibration.dig_P5)) *| 2;
+    var2 = @divTrunc(var2, 4) +| @as(i32, self.calibration.dig_P4) *| 65536;
+    var var3: i32 = @divTrunc(@divTrunc(var1, 4) *| @divTrunc(var1, 4), 8192);
+    var3 = self.calibration.dig_P3 *| var3;
+    var3 = @divTrunc(var3, 8);
+    const var4: i32 = @divTrunc(@as(i32, self.calibration.dig_P2) *| var1, 2);
+    var1 = @divTrunc(var3 +| var4, 262144);
+    var1 = @divTrunc((32768 +| var1) *| @as(i32, self.calibration.dig_P1), 32768);
+
+    if (var1 != 0) {
+        const var5: u32 = @as(u32, @max(0, 1048576 -| press_uncomp));
+        pressure = (var5 -| @as(u32, @max(0, @divTrunc(var2, 4096)))) * 3125;
+
+        if (pressure < 0x80000000) {
+            pressure = @divTrunc(pressure *| 2, @as(u32, @max(0, var1)));
+        } else {
+            pressure = @divTrunc(pressure, @as(u32, @max(0, var1))) *| 2;
+        }
+
+        var1 = @intCast(@divTrunc(pressure, 8));
+        var1 = @divTrunc(var1 *| var1, 8192);
+        var1 = var1 *| self.calibration.dig_P9;
+        var1 = @divTrunc(var1, 4096);
+        var2 = @intCast(@divTrunc(pressure, 4));
+        var2 = @divTrunc(var2 *| self.calibration.dig_P8, 8192);
+        pressure = @intCast(@as(i32, @intCast(pressure)) +| @divTrunc(var1 +| var2 +| self.calibration.dig_P7, 16));
+
+        if (pressure < pressure_min) {
+            pressure = pressure_min;
+        } else if (pressure > pressure_max) {
+            pressure = pressure_max;
+        }
+    } else {
+        pressure = pressure_min;
+    }
+
+    return pressure;
+}
+
+pub fn compensate_humidity(self: *Bme280) u32 {
+    var var1: i32 = 0;
+    var var2: i32 = 0;
+    var var3: i32 = 0;
+    var var4: i32 = 0;
+    var var5: i32 = 0;
+    var humidity: u32 = 0;
+    const humidity_max: u32 = 102400;
+
+    var humidity_uncomp: u32 = self.sensors.hum_lsb;
+    humidity_uncomp = humidity_uncomp | (@as(u32, self.sensors.hum_msb) << 8);
+
+    var1 = self.temp_fine -| 76800;
+    var2 = @as(i32, @intCast(humidity_uncomp)) *| 16384;
+    var3 = @as(i32, self.calibration.dig_H4) *| 1048576;
+    var4 = self.calibration.dig_H5 *| var1;
+    var5 = @divTrunc(((var2 -| var3) -| var4) +| 16384, 32768);
+    var2 = @divTrunc(var1 *| self.calibration.dig_H6, 1024);
+    var3 = @divTrunc(var1 *| self.calibration.dig_H3, 2048);
+    var4 = @divTrunc(var2 *| (var3 +| 32768), 1024) +| 2097152;
+    var2 = @divTrunc(var4 *| self.calibration.dig_H2 + 8192, 16384);
+    var3 = var5 *| var2;
+    var4 = @divTrunc(var3, 32768);
+    var4 = @divTrunc(var4 *| var4, 128);
+    var5 = var3 -| @divTrunc(var4 *| self.calibration.dig_H1, 16);
+    var5 = if (var5 <= 0) 0 else var5;
+    var5 = if (var5 > 419430400) 419430400 else var5;
+    humidity = @intCast(@max(0, @divTrunc(var5, 4096)));
+
+    if (humidity > humidity_max) {
+        humidity = humidity_max;
+    }
+
+    return humidity;
+}
 
 test "Bme280 last register offset/address" {
     const std = @import("std");
@@ -360,6 +444,15 @@ test "Bme280 last register offset/address" {
 }
 
 test "compensate_temperature" {
-    //const sensors: Sensors = .{ .temp_xlsb = .{ .temp_xlsb = 0 }, .temp_lsb = 0, .temp_msb = 0 };
-    //_ = sensors;
+    const sensors: Sensors = .{
+        .temp_xlsb = .{},
+        .temp_lsb = 0,
+        .temp_msb = 0,
+        .press_msb = 0,
+        .press_lsb = 0,
+        .press_xlsb = .{},
+        .hum_lsb = 0,
+        .hum_msb = 0,
+    };
+    _ = sensors;
 }
