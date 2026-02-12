@@ -20,6 +20,8 @@ var bme280: Bme280 = .{
     .read_func = bme280_read,
     .write_func = bme280_write,
 };
+var ovr: [3]Bme280.Registers.Osrs = undefined;
+var filter: Bme280.Registers.Config.Filter = undefined;
 var mode: Bme280.Registers.Ctrl_meas.Mode = undefined;
 var status: Bme280.Registers.Status = undefined;
 var temp: i32 = undefined;
@@ -40,7 +42,8 @@ pub fn main() void {
     sysTickConfig();
 
     bme280.readCalibration();
-    _ = bme280.setOversample(.oversample_16, .oversample_16, .oversample_16);
+    ovr = bme280.setOversample(.oversample_16, .oversample_16, .oversample_16);
+    filter = bme280.setFilter(.@"4");
     mode = bme280.setMode(.normal);
     status = bme280.getStatus();
 

@@ -307,10 +307,33 @@ pub fn setOversample(self: *Bme280, press_osrs: Registers.Osrs, temp_osrs: Regis
 }
 
 pub fn getStatus(self: *Bme280) Registers.Status {
-    var buffer: [1]u8 = .{0};
+    var buffer: [1]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.status), &buffer);
     const status: Registers.Status = @bitCast(buffer[0]);
     return status;
+}
+
+pub fn getConfig(self: *Bme280) Registers.Config {
+    var buffer: [1]u8 = undefined;
+    self.read_func.?(@intFromPtr(&registers.config), &buffer);
+    const config: Registers.Config = @bitCast(buffer[0]);
+    return config;
+}
+
+pub fn setConfig(self: *Bme280, config: Registers.Config) Registers.Config {
+    var buffer: [1]u8 = @bitCast(config);
+    self.write_func.?(@intFromPtr(&registers.config), &buffer);
+    return getConfig(self);
+}
+
+pub fn getFilter(self: *Bme280) Registers.Config.Filter {
+    return getConfig(self).filter;
+}
+
+pub fn setFilter(self: *Bme280, filter: Registers.Config.Filter) Registers.Config.Filter {
+    var config = getConfig(self);
+    config.filter = filter;
+    return setConfig(self, config).filter;
 }
 
 pub fn initSensor(self: *Bme280) void {
