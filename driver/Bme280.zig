@@ -161,7 +161,7 @@ pub const Calibration = struct {
     dig_H6: i8 = 0,
 };
 
-pub const Sensors = packed struct(u64) {
+pub const Adc = packed struct(u64) {
     press_msb: u8 = 0x80,
     press_lsb: u8 = 0x00,
     press_xlsb: Registers.Press_xlsb = .{},
@@ -185,40 +185,39 @@ addr: ?u8 = null,
 read_func: Bme280ReadFunc = null,
 write_func: Bme280WriteFunc = null,
 calibration: Calibration = .{},
-sensors: Sensors = .{},
+adc: Adc = .{},
 temp_fine: i32 = 0,
 
 pub fn readCalibration(self: *Bme280) void {
     var buffer: [24]u8 = .{0} ** 24;
     var reg_addr: u8 = 0;
-    var cal = self.calibration;
 
     reg_addr = @intFromPtr(&registers.dig_T1);
     self.read_func.?(reg_addr, buffer[0..24]);
-    cal.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
-    cal.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
-    cal.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
-    cal.dig_P1 = (@as(u16, buffer[7]) << 8) | @as(u16, buffer[6]);
-    cal.dig_P2 = (@as(i16, buffer[9]) << 8) | @as(i16, buffer[8]);
-    cal.dig_P3 = (@as(i16, buffer[11]) << 8) | @as(i16, buffer[10]);
-    cal.dig_P4 = (@as(i16, buffer[13]) << 8) | @as(i16, buffer[12]);
-    cal.dig_P5 = (@as(i16, buffer[15]) << 8) | @as(i16, buffer[14]);
-    cal.dig_P6 = (@as(i16, buffer[17]) << 8) | @as(i16, buffer[16]);
-    cal.dig_P7 = (@as(i16, buffer[19]) << 8) | @as(i16, buffer[18]);
-    cal.dig_P8 = (@as(i16, buffer[21]) << 8) | @as(i16, buffer[20]);
-    cal.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
+    self.calibration.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
+    self.calibration.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
+    self.calibration.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
+    self.calibration.dig_P1 = (@as(u16, buffer[7]) << 8) | @as(u16, buffer[6]);
+    self.calibration.dig_P2 = (@as(i16, buffer[9]) << 8) | @as(i16, buffer[8]);
+    self.calibration.dig_P3 = (@as(i16, buffer[11]) << 8) | @as(i16, buffer[10]);
+    self.calibration.dig_P4 = (@as(i16, buffer[13]) << 8) | @as(i16, buffer[12]);
+    self.calibration.dig_P5 = (@as(i16, buffer[15]) << 8) | @as(i16, buffer[14]);
+    self.calibration.dig_P6 = (@as(i16, buffer[17]) << 8) | @as(i16, buffer[16]);
+    self.calibration.dig_P7 = (@as(i16, buffer[19]) << 8) | @as(i16, buffer[18]);
+    self.calibration.dig_P8 = (@as(i16, buffer[21]) << 8) | @as(i16, buffer[20]);
+    self.calibration.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
 
     reg_addr = @intFromPtr(&registers.dig_H1);
     self.read_func.?(reg_addr, buffer[0..1]);
-    cal.dig_H1 = buffer[0];
+    self.calibration.dig_H1 = buffer[0];
 
     reg_addr = @intFromPtr(&registers.dig_H2);
     self.read_func.?(reg_addr, buffer[0..7]);
-    cal.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
-    cal.dig_H3 = buffer[2];
-    cal.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
-    cal.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
-    cal.dig_H6 = @bitCast(buffer[6]);
+    self.calibration.dig_H2 = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
+    self.calibration.dig_H3 = buffer[2];
+    self.calibration.dig_H4 = (@as(i16, buffer[3]) << 4) | (@as(i16, buffer[4]) & 0xf);
+    self.calibration.dig_H5 = (@as(i16, buffer[5]) << 4) | ((@as(i16, buffer[4]) & 0xf0) >> 4);
+    self.calibration.dig_H6 = @bitCast(buffer[6]);
 }
 
 pub fn getCtrlMeas(self: *Bme280) Registers.Ctrl_meas {
@@ -314,19 +313,29 @@ pub fn getStatus(self: *Bme280) Registers.Status {
     return status;
 }
 
-pub fn getSensorValues(self: *Bme280) void {
+pub fn initSensor(self: *Bme280) void {
+    self.readCalibration();
+    const mode = self.setMode(.normal);
+    _ = mode;
+    const ovr = self.setOversample(.oversample_1, .oversample_1, .oversample_1);
+    _ = ovr;
+    const status = self.getStatus();
+    _ = status;
+}
+
+pub fn getAdc(self: *Bme280) void {
     var buffer: [8]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.press_msb), &buffer);
-    self.sensors = @bitCast(buffer);
+    self.adc = @bitCast(buffer);
 }
 
 // Temperature in Celcius
 // Return value = temperature*100. For example 2054 = 20.54 degC
 pub fn compensate_temperature(self: *Bme280) i32 {
     // Raw temperature reading from ADC is 20 bits
-    var temp_uncomp: i32 = @as(i32, self.sensors.temp_xlsb.temp_xlsb);
-    temp_uncomp = temp_uncomp | (@as(i32, self.sensors.temp_lsb) << 4);
-    temp_uncomp = temp_uncomp | (@as(i32, self.sensors.temp_msb) << 16);
+    var temp_uncomp: i32 = @as(i32, self.adc.temp_xlsb.temp_xlsb);
+    temp_uncomp = temp_uncomp | (@as(i32, self.adc.temp_lsb) << 4);
+    temp_uncomp = temp_uncomp | (@as(i32, self.adc.temp_msb) << 12);
 
     var var1: i32 = @divTrunc(temp_uncomp, 8);
     var1 = var1 -| @as(i32, self.calibration.dig_T1) *| 2;
@@ -347,31 +356,33 @@ pub fn compensate_temperature(self: *Bme280) i32 {
     return temp;
 }
 
-// Pressure in Pa in Q24.8 fixed point format
+// Pressure in Pa
 pub fn compensate_pressure(self: *Bme280) u32 {
     const pressure_min: u32 = 30000;
     const pressure_max: u32 = 110000;
     var pressure: u32 = 0;
 
     // Raw pressure reading from ADC is 20 bits
-    var press_uncomp: i32 = @as(i32, self.sensors.press_xlsb.press_xlsb);
-    press_uncomp = press_uncomp | (@as(i32, self.sensors.press_lsb) << 4);
-    press_uncomp = press_uncomp | (@as(i32, self.sensors.press_msb) << 16);
+    var press_uncomp: i32 = @as(i32, self.adc.press_xlsb.press_xlsb);
+    press_uncomp = press_uncomp | (@as(i32, self.adc.press_lsb) << 4);
+    press_uncomp = press_uncomp | (@as(i32, self.adc.press_msb) << 12);
 
     var var1: i32 = @divTrunc(self.temp_fine, 2) -| 64000;
-    var var2: i32 = @divTrunc((@divTrunc(var1, 4) *| @divTrunc(var1, 4)), 2048);
+    var var2: i32 = @divTrunc(var1, 4);
+    var2 = @divTrunc(var2 *| var2, 2048);
     var2 = var2 *| @as(i32, self.calibration.dig_P6);
-    var2 = var2 +| (var1 * @as(i32, self.calibration.dig_P5)) *| 2;
+    var2 = var2 +| (var1 *| @as(i32, self.calibration.dig_P5)) *| 2;
     var2 = @divTrunc(var2, 4) +| @as(i32, self.calibration.dig_P4) *| 65536;
-    var var3: i32 = @divTrunc(@divTrunc(var1, 4) *| @divTrunc(var1, 4), 8192);
-    var3 = self.calibration.dig_P3 *| var3;
+    var var3: i32 = @divTrunc(var1, 4);
+    var3 = @divTrunc(var3 *| var3, 8192);
+    var3 = @as(i32, self.calibration.dig_P3) *| var3;
     var3 = @divTrunc(var3, 8);
     const var4: i32 = @divTrunc(@as(i32, self.calibration.dig_P2) *| var1, 2);
     var1 = @divTrunc(var3 +| var4, 262144);
     var1 = @divTrunc((32768 +| var1) *| @as(i32, self.calibration.dig_P1), 32768);
 
     if (var1 != 0) {
-        const var5: u32 = @as(u32, @max(0, 1048576 -| press_uncomp));
+        const var5: u32 = @as(u32, @intCast(1048576 - press_uncomp));
         pressure = (var5 -| @as(u32, @max(0, @divTrunc(var2, 4096)))) * 3125;
 
         if (pressure < 0x80000000) {
@@ -400,6 +411,8 @@ pub fn compensate_pressure(self: *Bme280) u32 {
     return pressure;
 }
 
+// Relative humidity in % in Q22.10 fixed point format
+// Output value of 47445 represents 47445/1024 = 46.33 %
 pub fn compensate_humidity(self: *Bme280) u32 {
     var var1: i32 = 0;
     var var2: i32 = 0;
@@ -409,8 +422,8 @@ pub fn compensate_humidity(self: *Bme280) u32 {
     var humidity: u32 = 0;
     const humidity_max: u32 = 102400;
 
-    var humidity_uncomp: u32 = self.sensors.hum_lsb;
-    humidity_uncomp = humidity_uncomp | (@as(u32, self.sensors.hum_msb) << 8);
+    var humidity_uncomp: u32 = self.adc.hum_lsb;
+    humidity_uncomp = humidity_uncomp | (@as(u32, self.adc.hum_msb) << 8);
 
     var1 = self.temp_fine -| 76800;
     var2 = @as(i32, @intCast(humidity_uncomp)) *| 16384;
@@ -444,7 +457,7 @@ test "Bme280 last register offset/address" {
 }
 
 test "compensate_temperature" {
-    const sensors: Sensors = .{
+    const sensors: Adc = .{
         .temp_xlsb = .{},
         .temp_lsb = 0,
         .temp_msb = 0,

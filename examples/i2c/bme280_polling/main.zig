@@ -40,12 +40,12 @@ pub fn main() void {
     sysTickConfig();
 
     bme280.readCalibration();
+    _ = bme280.setOversample(.oversample_16, .oversample_16, .oversample_16);
     mode = bme280.setMode(.normal);
-    _ = bme280.setOversample(.oversample_1, .oversample_1, .oversample_1);
     status = bme280.getStatus();
 
     while (true) {
-        bme280.getSensorValues();
+        bme280.getAdc();
         temp = bme280.compensate_temperature();
         press = bme280.compensate_pressure();
         hum = bme280.compensate_humidity();
