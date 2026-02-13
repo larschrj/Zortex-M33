@@ -346,6 +346,11 @@ pub fn setStandbyTime(self: *Bme280, standby_time: Registers.Config.T_sb) Regist
     return setConfig(self, config).t_sb;
 }
 
+pub fn softReset(self: *Bme280) void {
+    var buffer: [1]u8 = .{@intFromEnum(Registers.Reset.reset)};
+    self.write_func.?(@intFromPtr(registers.reset), &buffer);
+}
+
 pub fn initSensor(self: *Bme280) void {
     self.readCalibration();
     const mode = self.setMode(.normal);
