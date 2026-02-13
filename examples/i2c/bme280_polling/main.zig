@@ -40,20 +40,19 @@ pub fn main() void {
     i2c1Config();
     sysTickConfig();
 
+    bme280.softReset();
     bme280.readCalibration();
     ovr = bme280.setOversample(.oversample_16, .oversample_16, .oversample_16);
     filter = bme280.setFilter(.@"4");
     mode = bme280.setMode(.normal);
     status = bme280.getStatus();
 
-    for (0..9) |_| {
+    while (true) {
         bme280.getAdc();
         temp = bme280.compensate_temperature();
         press = bme280.compensate_pressure();
         hum = bme280.compensate_humidity();
     }
-
-    bme280.softReset();
 }
 
 fn clockConfig() void {
