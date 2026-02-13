@@ -336,6 +336,16 @@ pub fn setFilter(self: *Bme280, filter: Registers.Config.Filter) Registers.Confi
     return setConfig(self, config).filter;
 }
 
+pub fn getStandbyTime(self: *Bme280) Registers.Config.T_sb {
+    return getConfig(self).t_sb;
+}
+
+pub fn setStandbyTime(self: *Bme280, standby_time: Registers.Config.T_sb) Registers.Config.T_sb {
+    var config = getConfig(self);
+    config.t_sb = standby_time;
+    return setConfig(self, config).t_sb;
+}
+
 pub fn initSensor(self: *Bme280) void {
     self.readCalibration();
     const mode = self.setMode(.normal);

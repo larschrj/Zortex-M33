@@ -4,7 +4,6 @@ export const rcc = @import("stm32u585xx").rcc;
 export const gpiob = @import("stm32u585xx").gpiob;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c1 = @import("stm32u585xx").i2c1;
-const I2c = @import("stm32u585xx").I2c;
 const Bme280 = @import("Bme280");
 
 fn bme280_read(register_address: u8, receive_buffer: []u8) void {
