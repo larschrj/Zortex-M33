@@ -46,12 +46,14 @@ pub fn main() void {
     mode = bme280.setMode(.normal);
     status = bme280.getStatus();
 
-    while (true) {
+    for (0..9) |_| {
         bme280.getAdc();
         temp = bme280.compensate_temperature();
         press = bme280.compensate_pressure();
         hum = bme280.compensate_humidity();
     }
+
+    bme280.softReset();
 }
 
 fn clockConfig() void {
