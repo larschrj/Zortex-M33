@@ -2,6 +2,7 @@ const core_cm33 = @import("stm32u585xx").core_cm33;
 export const rcc = @import("stm32u585xx").rcc;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c2 = @import("stm32u585xx").i2c2;
+const Hts221 = @import("Hts221");
 
 export var hts221_t_out: [2]u8 = .{ 0, 1 };
 export var hts221_h_out: [2]u8 = .{ 0, 1 };

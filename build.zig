@@ -60,6 +60,17 @@ pub fn build(b: *std.Build) void {
     });
 
     //*******************************************************//
+    // driver/Hts221
+    //*******************************************************//
+    const Hts221 = b.addModule("Hts221", .{
+        .root_source_file = b.path("driver/Hts221.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+        .strip = false,
+    });
+
+    //*******************************************************//
     // example/blinky
     //*******************************************************//
     var blinky_root_module = b.createModule(.{
@@ -134,6 +145,7 @@ pub fn build(b: *std.Build) void {
         .strip = false,
     });
     b_u585_i2c_hts221_polling_root_module.addImport("stm32u585xx", stm32u585xx);
+    b_u585_i2c_hts221_polling_root_module.addImport("Hts221", Hts221);
     const b_u585_i2c_hts221_polling_exe = b.addExecutable(.{
         .name = "b_u585_i2c_hts221_polling.elf",
         .root_module = b_u585_i2c_hts221_polling_root_module,
