@@ -12,6 +12,7 @@ pub const GpioH = @import("gpio.zig").GpioH;
 pub const GpioI = @import("gpio.zig").GpioI;
 pub const Tim1Tim8 = @import("tim1tim8.zig").Tim1Tim8;
 pub const I2c = @import("i2c.zig").I2c;
+pub const Uart = @import("uart.zig").Uart;
 pub const Cordic = @import("cordic.zig").Cordic;
 
 const i2c1_base = 0x40005400;
