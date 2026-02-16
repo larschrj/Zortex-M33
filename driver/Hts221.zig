@@ -154,6 +154,11 @@ pub const Adc = packed struct(u32) {
     t_out: i16,
 };
 
+pub const Sensor = struct {
+    humidity: u16 = 0,
+    temperature: i16 = 0,
+};
+
 pub const I2c_addr = enum(u8) {
     @"0x5f" = 0x5f,
 };
@@ -162,9 +167,11 @@ const Hts221ReadFunc = ?*const fn (register_address: u8, register_data: []u8) vo
 const Hts221WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 
 addr: u8 = undefined,
-calib: Registers.Calib = undefined,
 read_func: Hts221ReadFunc = null,
 write_func: Hts221WriteFunc = null,
+calib: Registers.Calib = undefined,
+t0_degC_x8: i32 = undefined,
+t1_degC_x8: i32 = undefined,
 adc: Adc = undefined,
 
 pub fn readCalibration(self: *Hts221) void {
@@ -191,6 +198,10 @@ pub fn readCalibration(self: *Hts221) void {
     self.calib.h1_t0_out = (@as(i16, buffer[1]) << 8) & @as(i16, buffer[0]);
     self.calib.t0_out = (@as(i16, buffer[3]) << 8) & @as(i16, buffer[2]);
     self.calib.t1_out = (@as(i16, buffer[5]) << 8) & @as(i16, buffer[4]);
+
+    //
+    self.t0_degC_x8 = @bitCast(@as(u32, self.calib.t0_degC_x8) & (@as(u32, self.calib.t1t0_msb.t0_msb) << 8));
+    self.t1_degC_x8 = @bitCast(@as(u32, self.calib.t1_degC_x8) & (@as(u32, self.calib.t1t0_msb.t1_msb) << 8));
 }
 
 pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
@@ -207,6 +218,10 @@ pub fn getAdc(self: *Hts221) void {
     var buffer: [4]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.humidity_out) | 0x80, buffer[0..4]);
     self.adc = @bitCast(buffer);
+}
+
+pub fn getSensor(self: *Hts221) Sensor {
+    _ = self;
 }
 
 test "HTS221 last register address" {
