@@ -1,4 +1,4 @@
-const registers: *volatile Registers = @ptrFromInt(0x0f);
+const registers: *align(1) volatile Registers = @ptrFromInt(0x0f);
 
 const Hts221 = @This();
 
@@ -49,10 +49,10 @@ pub const Registers = packed struct {
     };
 
     pub const Ctrl_reg1 = packed struct(u8) {
-        odr: Odr,
-        bdu: Bdu,
-        _reserved0: u4,
-        pd: Pd,
+        odr: Odr = .oneshot,
+        bdu: Bdu = .continuous_update,
+        _reserved0: u4 = 0,
+        pd: Pd = .off,
 
         pub const Odr = enum(u2) {
             oneshot = 0b00,
@@ -73,10 +73,10 @@ pub const Registers = packed struct {
     };
 
     pub const Ctrl_reg2 = packed struct(u8) {
-        oneshot: Oneshot,
-        heater: Heater,
-        _reserved0: u5,
-        boot: Boot,
+        oneshot: Oneshot = .waiting,
+        heater: Heater = .disable,
+        _reserved0: u5 = 0,
+        boot: Boot = .normal,
 
         pub const Oneshot = enum(u1) {
             waiting = 0b0,
@@ -95,11 +95,11 @@ pub const Registers = packed struct {
     };
 
     pub const Ctrl_reg3 = packed struct(u8) {
-        _reserved0: u2,
-        drdy: Drdy,
-        _reserved1: u3,
-        pp_od: Pp_od,
-        drdy_h_l: Drdy_h_l,
+        _reserved0: u2 = 0,
+        drdy: Drdy = .dataready_disable,
+        _reserved1: u3 = 0,
+        pp_od: Pp_od = .pushpull,
+        drdy_h_l: Drdy_h_l = .active_high,
 
         pub const Drdy = enum(u1) {
             dataready_disable = 0b0,
@@ -149,9 +149,65 @@ pub const Registers = packed struct {
     };
 };
 
+pub const Adc = packed struct(u32) {
+    h_out: i16,
+    t_out: i16,
+};
+
 pub const I2c_addr = enum(u8) {
     @"0x5f" = 0x5f,
 };
+
+const Hts221ReadFunc = ?*const fn (register_address: u8, register_data: []u8) void;
+const Hts221WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
+
+addr: u8 = undefined,
+calib: Registers.Calib = undefined,
+read_func: Hts221ReadFunc = null,
+write_func: Hts221WriteFunc = null,
+adc: Adc = undefined,
+
+pub fn readCalibration(self: *Hts221) void {
+    var buffer: [6]u8 = undefined;
+
+    // Id
+    self.read_func.?(@intFromPtr(&registers.who_am_i), buffer[0..1]);
+
+    // h0_rH_x2 -> t1_degC_x8
+    // Set msb of register address to activate auto increment
+    self.read_func.?(@intFromPtr(&registers.calib.h0_rH_x2) | 0x80, buffer[0..4]);
+    self.calib.h0_rH_x2 = buffer[0];
+    self.calib.h1_rH_x2 = buffer[1];
+    self.calib.t0_degC_x8 = buffer[2];
+    self.calib.t1_degC_x8 = buffer[3];
+
+    // T1/T0 msb -> h0_t0_out
+    self.read_func.?(@intFromPtr(&registers.calib.t1t0_msb) | 0x80, buffer[0..3]);
+    self.calib.t1t0_msb = @bitCast(buffer[0]);
+    self.calib.h0_t0_out = (@as(i16, buffer[2]) << 8) & @as(i16, buffer[1]);
+
+    // h1_t0_out -> t1_out
+    self.read_func.?(@intFromPtr(&registers.calib.h1_t0_out) | 0x80, buffer[0..6]);
+    self.calib.h1_t0_out = (@as(i16, buffer[1]) << 8) & @as(i16, buffer[0]);
+    self.calib.t0_out = (@as(i16, buffer[3]) << 8) & @as(i16, buffer[2]);
+    self.calib.t1_out = (@as(i16, buffer[5]) << 8) & @as(i16, buffer[4]);
+}
+
+pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
+    const ctrl_reg1: Registers.Ctrl_reg1 = .{
+        .odr = data_rate,
+        .bdu = .msb_lsb_read,
+        .pd = .on,
+    };
+    var buffer: [1]u8 = @bitCast(ctrl_reg1);
+    self.write_func.?(@intFromPtr(&registers.ctrl_reg1), buffer[0..1]);
+}
+
+pub fn getAdc(self: *Hts221) void {
+    var buffer: [4]u8 = undefined;
+    self.read_func.?(@intFromPtr(&registers.humidity_out) | 0x80, buffer[0..4]);
+    self.adc = @bitCast(buffer);
+}
 
 test "HTS221 last register address" {
     const std = @import("std");

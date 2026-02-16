@@ -4,15 +4,19 @@ export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c2 = @import("stm32u585xx").i2c2;
 const Hts221 = @import("Hts221");
 
-export var hts221_t_out: [2]u8 = .{ 0, 1 };
-export var hts221_h_out: [2]u8 = .{ 0, 1 };
-export var hts221_address: u8 = 0xbe;
-export var hts221_calibration: [13]u8 = undefined;
-export var hts221_T0_degC: u16 = undefined;
-export var hts221_T1_degC: u16 = undefined;
-export var hts221_T0_out: i16 = undefined;
-export var hts221_T1_out: i16 = undefined;
-export var temp: i32 = undefined;
+var hts221: Hts221 = .{
+    .addr = @intFromEnum(Hts221.I2c_addr.@"0x5f"),
+    .read_func = &hts221Read,
+    .write_func = &hts221Write,
+};
+
+fn hts221Read(register_address: u8, receive_buffer: []u8) void {
+    i2c2.readMultiplePolling(hts221.addr, register_address, receive_buffer);
+}
+
+fn hts221Write(register_address: u8, receive_buffer: []u8) void {
+    i2c2.writeMultiplePolling(hts221.addr, register_address, receive_buffer);
+}
 
 pub fn main() void {
     core_cm33.enableIrq();
@@ -21,47 +25,11 @@ pub fn main() void {
     i2c2Config();
     sysTickConfig();
 
-    // read calibration
-    hts221_calibration[0] = i2c2.readPolling(hts221_address, 0x30);
-    hts221_calibration[1] = i2c2.readPolling(hts221_address, 0x31);
-    hts221_calibration[2] = i2c2.readPolling(hts221_address, 0x32);
-    hts221_calibration[3] = i2c2.readPolling(hts221_address, 0x33);
-    hts221_calibration[4] = i2c2.readPolling(hts221_address, 0x35);
-    hts221_calibration[5] = i2c2.readPolling(hts221_address, 0x36);
-    hts221_calibration[6] = i2c2.readPolling(hts221_address, 0x37);
-    hts221_calibration[7] = i2c2.readPolling(hts221_address, 0x3a);
-    hts221_calibration[8] = i2c2.readPolling(hts221_address, 0x3b);
-    hts221_calibration[9] = i2c2.readPolling(hts221_address, 0x3c);
-    hts221_calibration[10] = i2c2.readPolling(hts221_address, 0x3d);
-    hts221_calibration[11] = i2c2.readPolling(hts221_address, 0x3e);
-    hts221_calibration[12] = i2c2.readPolling(hts221_address, 0x3f);
-
-    // temp calibration
-    hts221_T0_degC = @intCast((@as(u16, hts221_calibration[4] & 0x3) << 8) | @as(u16, hts221_calibration[2]));
-    hts221_T0_degC = @divFloor(hts221_T0_degC, 8);
-    hts221_T1_degC = @intCast((@as(u16, hts221_calibration[4] & 0xc) << 6) | @as(u16, hts221_calibration[3]));
-    hts221_T1_degC = @divFloor(hts221_T1_degC, 8);
-    hts221_T0_out = @intCast(@as(i16, hts221_calibration[9]) | @as(i16, hts221_calibration[10]) << 8);
-    hts221_T1_out = @intCast(@as(i16, hts221_calibration[11]) | @as(i16, hts221_calibration[12]) << 8);
-
-    // turn on, 12.5 Hz, block data update
-    i2c2.writePolling(hts221_address, 0x20, 0x87);
-    // Heater off, reboot cal memory
-    i2c2.writePolling(hts221_address, 0x21, 0x0);
+    hts221.readCalibration();
+    hts221.initSensor(.@"12.5Hz");
 
     while (true) {
-        // read status
-        const status: u8 = i2c2.readPolling(hts221_address, 0x27);
-
-        if ((status & 0x1) > 0) {
-            // read T_out
-            hts221_t_out[0] = i2c2.readPolling(hts221_address, 0x2a);
-            hts221_t_out[1] = i2c2.readPolling(hts221_address, 0x2b);
-        }
-        if ((status & 0x2) > 0) {
-            hts221_h_out[0] = i2c2.readPolling(hts221_address, 0x28);
-            hts221_h_out[1] = i2c2.readPolling(hts221_address, 0x29);
-        }
+        hts221.getAdc();
     }
 }
 
