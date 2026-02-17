@@ -155,8 +155,8 @@ pub const Adc = packed struct(u32) {
 };
 
 pub const Sensor = struct {
-    humidity: u16 = 0,
-    temperature: i16 = 0,
+    humidity: i32 = 0,
+    temperature: i32 = 0,
 };
 
 pub const I2c_addr = enum(u8) {
@@ -220,8 +220,47 @@ pub fn getAdc(self: *Hts221) void {
     self.adc = @bitCast(buffer);
 }
 
+// Temperature in degC
+// Return value = temperature*8. A return value of 80 = 10 degC.
+pub fn temperature(self: *Hts221) i32 {
+    const t_out = @as(i32, self.adc.t_out);
+    const t0_out = @as(i32, self.calib.t0_out);
+    const t1_out = @as(i32, self.calib.t1_out);
+    const t0_degC_x8 = @as(i32, self.t0_degC_x8);
+    const t1_degC_x8 = @as(i32, self.t1_degC_x8);
+
+    var temp: i32 = t_out - t0_out;
+    temp = temp *| (t1_degC_x8 - t0_degC_x8);
+    temp = temp / (t1_out - t0_out);
+    temp = temp +| t0_degC_x8;
+    return temp;
+}
+
+// Relative humidity in %
+// Return value = humidity*2. A return value of 40 = 20 %RH
+pub fn humidity(self: *Hts221) i32 {
+    const h_out = @as(i32, self.adc.h_out);
+    const h0_t0_out = @as(i32, self.calib.h0_t0_out);
+    const h1_t0_out = @as(i32, self.calib.h1_t0_out);
+    const h0_rH_x2 = @as(i32, self.calib.h0_rH_x2);
+    const h1_rH_x2 = @as(i32, self.calib.h1_rH_x2);
+
+    var hum: i32 = (h_out - h0_t0_out);
+    hum = hum *| (h1_rH_x2 - h0_rH_x2);
+    hum = hum / (h1_t0_out - h0_t0_out);
+    hum = hum + h0_rH_x2;
+    return hum;
+}
+
+// Sensor temperature and humidity
+// Temperature in degC. Return value = temperature*8
+// Relative humidity in %. Return value = humidity*2
 pub fn getSensor(self: *Hts221) Sensor {
-    _ = self;
+    var sensor: Sensor = undefined;
+    self.getAdc();
+    sensor.temperature = self.temperature();
+    sensor.humidity = self.humidity();
+    return sensor;
 }
 
 test "HTS221 last register address" {
