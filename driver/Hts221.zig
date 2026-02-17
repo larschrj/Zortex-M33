@@ -205,6 +205,7 @@ pub fn readCalibration(self: *Hts221) void {
 }
 
 pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
+    self.readCalibration();
     const ctrl_reg1: Registers.Ctrl_reg1 = .{
         .odr = data_rate,
         .bdu = .msb_lsb_read,
@@ -231,7 +232,7 @@ pub fn temperature(self: *Hts221) i32 {
 
     var temp: i32 = t_out - t0_out;
     temp = temp *| (t1_degC_x8 - t0_degC_x8);
-    temp = temp / (t1_out - t0_out);
+    temp = @divTrunc(temp, t1_out - t0_out);
     temp = temp +| t0_degC_x8;
     return temp;
 }
@@ -247,7 +248,7 @@ pub fn humidity(self: *Hts221) i32 {
 
     var hum: i32 = (h_out - h0_t0_out);
     hum = hum *| (h1_rH_x2 - h0_rH_x2);
-    hum = hum / (h1_t0_out - h0_t0_out);
+    hum = @divTrunc(hum, h1_t0_out - h0_t0_out);
     hum = hum + h0_rH_x2;
     return hum;
 }

@@ -1,3 +1,4 @@
+const std = @import("std");
 const core_cm33 = @import("stm32u585xx").core_cm33;
 export const rcc = @import("stm32u585xx").rcc;
 export const gpioh = @import("stm32u585xx").gpioh;
@@ -9,6 +10,7 @@ var hts221: Hts221 = .{
     .read_func = &hts221Read,
     .write_func = &hts221Write,
 };
+var sensor: Hts221.Sensor = undefined;
 
 fn hts221Read(register_address: u8, receive_buffer: []u8) void {
     i2c2.readMultiplePolling(hts221.addr, register_address, receive_buffer);
@@ -24,12 +26,12 @@ pub fn main() void {
     gpioConfig();
     i2c2Config();
     sysTickConfig();
+    std.mem.doNotOptimizeAway(sensor);
 
-    hts221.readCalibration();
     hts221.initSensor(.@"12.5Hz");
 
     while (true) {
-        hts221.getAdc();
+        sensor = hts221.getSensor();
     }
 }
 
