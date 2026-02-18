@@ -191,17 +191,17 @@ pub fn readCalibration(self: *Hts221) void {
     // T1/T0 msb -> h0_t0_out
     self.read_func.?(@intFromPtr(&registers.calib.t1t0_msb) | 0x80, buffer[0..3]);
     self.calib.t1t0_msb = @bitCast(buffer[0]);
-    self.calib.h0_t0_out = (@as(i16, buffer[2]) << 8) & @as(i16, buffer[1]);
+    self.calib.h0_t0_out = (@as(i16, buffer[2]) << 8) | @as(i16, buffer[1]);
 
     // h1_t0_out -> t1_out
     self.read_func.?(@intFromPtr(&registers.calib.h1_t0_out) | 0x80, buffer[0..6]);
-    self.calib.h1_t0_out = (@as(i16, buffer[1]) << 8) & @as(i16, buffer[0]);
-    self.calib.t0_out = (@as(i16, buffer[3]) << 8) & @as(i16, buffer[2]);
-    self.calib.t1_out = (@as(i16, buffer[5]) << 8) & @as(i16, buffer[4]);
+    self.calib.h1_t0_out = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
+    self.calib.t0_out = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
+    self.calib.t1_out = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
 
     //
-    self.t0_degC_x8 = @bitCast(@as(u32, self.calib.t0_degC_x8) & (@as(u32, self.calib.t1t0_msb.t0_msb) << 8));
-    self.t1_degC_x8 = @bitCast(@as(u32, self.calib.t1_degC_x8) & (@as(u32, self.calib.t1t0_msb.t1_msb) << 8));
+    self.t0_degC_x8 = @bitCast(@as(u32, self.calib.t0_degC_x8) | (@as(u32, self.calib.t1t0_msb.t0_msb) << 8));
+    self.t1_degC_x8 = @bitCast(@as(u32, self.calib.t1_degC_x8) | (@as(u32, self.calib.t1t0_msb.t1_msb) << 8));
 }
 
 pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
@@ -232,7 +232,12 @@ pub fn temperature(self: *Hts221) i32 {
 
     var temp: i32 = t_out - t0_out;
     temp = temp *| (t1_degC_x8 - t0_degC_x8);
-    temp = @divTrunc(temp, t1_out - t0_out);
+    const div = t1_out - t0_out;
+    if (div == 0) {
+        temp = @divTrunc(temp, 1);
+    } else {
+        temp = @divTrunc(temp, div);
+    }
     temp = temp +| t0_degC_x8;
     return temp;
 }
@@ -248,7 +253,12 @@ pub fn humidity(self: *Hts221) i32 {
 
     var hum: i32 = (h_out - h0_t0_out);
     hum = hum *| (h1_rH_x2 - h0_rH_x2);
-    hum = @divTrunc(hum, h1_t0_out - h0_t0_out);
+    const div = h1_t0_out - h0_t0_out;
+    if (div == 0) {
+        hum = @divTrunc(hum, 1);
+    } else {
+        hum = @divTrunc(hum, div);
+    }
     hum = hum + h0_rH_x2;
     return hum;
 }
