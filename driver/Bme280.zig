@@ -172,6 +172,16 @@ pub const Adc = packed struct(u64) {
     hum_lsb: u8 = 0x00,
 };
 
+// Combined sensor reading
+// Pressure in Pa
+// Temperature*100 in degC
+// (Relative humidity)*1024 in %
+pub const Sensor = struct {
+    pressure: u32,
+    temperature: i32,
+    humidity: u32,
+};
+
 pub const I2c_addr = enum(u8) {
     @"0x76" = 0x76,
     @"0x77" = 0x77,
@@ -365,6 +375,15 @@ pub fn getAdc(self: *Bme280) void {
     var buffer: [8]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.press_msb), &buffer);
     self.adc = @bitCast(buffer);
+}
+
+pub fn getSensor(self: *Bme280) Sensor {
+    var sensor: Sensor = undefined;
+    self.getAdc();
+    sensor.pressure = compensate_pressure(self);
+    sensor.temperature = compensate_temperature(self);
+    sensor.humidity = compensate_humidity(self);
+    return sensor;
 }
 
 // Temperature in Celcius

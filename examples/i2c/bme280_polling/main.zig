@@ -23,17 +23,13 @@ var ovr: [3]Bme280.Registers.Osrs = undefined;
 var filter: Bme280.Registers.Config.Filter = undefined;
 var mode: Bme280.Registers.Ctrl_meas.Mode = undefined;
 var status: Bme280.Registers.Status = undefined;
-var temp: i32 = undefined;
-var press: u32 = undefined;
-var hum: u32 = undefined;
+var sensor: Bme280.Sensor = undefined;
 
 pub fn main() void {
     std.mem.doNotOptimizeAway(&bme280);
     std.mem.doNotOptimizeAway(&mode);
     std.mem.doNotOptimizeAway(&status);
-    std.mem.doNotOptimizeAway(&temp);
-    std.mem.doNotOptimizeAway(&press);
-    std.mem.doNotOptimizeAway(&hum);
+    std.mem.doNotOptimizeAway(&sensor);
     core_cm33.enableIrq();
     clockConfig();
     gpioConfig();
@@ -48,10 +44,7 @@ pub fn main() void {
     status = bme280.getStatus();
 
     while (true) {
-        bme280.getAdc();
-        temp = bme280.compensate_temperature();
-        press = bme280.compensate_pressure();
-        hum = bme280.compensate_humidity();
+        sensor = bme280.getSensor();
     }
 }
 
