@@ -1,4 +1,4 @@
-pub const Uart = packed struct {
+pub const Usart = packed struct {
     cr1: Cr1 = @bitCast(@as(u32, 0x00000000)), // Control register 1, Address offset 0x00
     cr2: u32 = @as(u32, 0x00000000), // Control register 2, Address offset 0x04
     cr3: u32 = @as(u32, 0x00000000), // Control register 3, Address offset 0x08
@@ -23,6 +23,7 @@ pub const Uart = packed struct {
         tcie: u1, // Transmission complete interrupt enable
         txfnfie: u1, // TXFIFO not full interrupt enable
         peie: u1, // PE interrupt enable
+        ps: u1, // Parity selection
         pce: u1, // Parity selection
         wake: u1, // Receiver wake-up method
         m0: u1, // Word length
