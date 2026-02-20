@@ -1,8 +1,8 @@
 pub const Usart = packed struct {
     cr1: Cr1 = @bitCast(@as(u32, 0x00000000)), // Control register 1, Address offset 0x00
-    cr2: u32 = @as(u32, 0x00000000), // Control register 2, Address offset 0x04
-    cr3: u32 = @as(u32, 0x00000000), // Control register 3, Address offset 0x08
-    brr: u32 = @as(u32, 0x00000000), // Baud rate register, Address offset 0x0c
+    cr2: Cr2 = @bitCast(@as(u32, 0x00000000)), // Control register 2, Address offset 0x04
+    cr3: Cr3 = @bitCast(@as(u32, 0x00000000)), // Control register 3, Address offset 0x08
+    brr: Brr = @bitCast(@as(u32, 0x00000000)), // Baud rate register, Address offset 0x0c
     gtpr: u32 = @as(u32, 0x00000000), // Guard time and prescale register, Address offset 0x10
     rtor: u32 = @as(u32, 0x00000000), // Receiver timeout register, Address offset 0x14
     rqr: u32 = @as(u32, 0x00000000), // Request register, Address offset 0x18
@@ -55,5 +55,45 @@ pub const Usart = packed struct {
         stop: u2, // Stop bits
         linen: u1, // LIN mode enable
         swap: u1, // Swap TX/RX pins
+        rxinv: u1, // RX pin active level inversion
+        txinv: u1, // TX pin active level inversion
+        datainv: u1, // Binary data inversion
+        msbfirst: u1, // Most significant bit first
+        abren: u1, // Auto baud rate enable
+        abrmod: u2, // Auto baud rate mode
+        rtoen: u1, // Receiver timout enable
+        add: u8, // Address of the USART node
+    };
+
+    pub const Cr3 = packed struct(u32) {
+        eie: u1, // Error interrupt enable
+        iren: u1, // IrDA mode enable
+        irlp: u1, // IrDA low power
+        hdsel: u1, // Half-duplex selection
+        nack: u1, // Smartcard nack enable
+        scen: u1, // Smartcard mode enable
+        dmar: u1, // DMA enable receiver
+        dmat: u1, // DMA enable transmitter
+        rtse: u1, // RTS enable
+        ctse: u1, // CTS enable
+        ctsie: u1, // CTS interrupt enable
+        onebit: u1, // One sample bit method enable
+        ovrdis: u1, // Overrun disable
+        ddre: u1, // DMA disable on reception error
+        dem: u1, // Driver enable mode
+        dep: u1, // Driver enable polarity selection
+        _reserved0: u1,
+        scarcnt: u3, // Smartcard auto-retry count
+        _reserved1: u3,
+        txftie: u1, // TXFIFO threshold interrupt enable
+        tcbgtie: u1, // Transmission complete before guard time, interrupt enable
+        rxftcfg: u3, // Receive FIFO threshold configuration
+        rxftie: u1, // RXFIFO threshold interrupt enable
+        txftcfg: u3, // TXFIFO threshold configuration
+    };
+
+    pub const Brr = packed struct(u32) {
+        brr: u16, // USART baud rate
+        _reserved0: u16,
     };
 };
