@@ -46,8 +46,9 @@ fn clockConfig() void {
     // APB2 clock = hclk/16 = 250 kHz
     rcc.cfgr2.ppre2 = .div16;
 
-    // usart1 clock = APB2 clock = 250 kHz
+    // usart1 ker clock = APB2 clock = 250 kHz
     rcc.ccipr1.usart1sel = .pclk2;
+    rcc.apb2enr.usart1en = .enable;
 }
 
 fn gpioConfig() void {

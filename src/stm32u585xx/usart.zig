@@ -14,81 +14,130 @@ pub const Usart = packed struct {
     autocr: u32 = @as(u32, 0x80000000), // Autonomous mode control register, Address offset 0x30
 
     pub const Cr1 = packed struct(u32) {
-        ue: u1, // USART enable
-        uesm: u1, // USART enable in low-power mode
-        re: u1, // Receiver enable
-        te: u1, // Transmitter enable
-        idleie: u1, // IDLE interrupt enable
-        rxfneie: u1, // RXFIFO not empty interrupt enable
-        tcie: u1, // Transmission complete interrupt enable
-        txfnfie: u1, // TXFIFO not full interrupt enable
-        peie: u1, // PE interrupt enable
-        ps: u1, // Parity selection
-        pce: u1, // Parity selection
-        wake: u1, // Receiver wake-up method
+        ue: Enable, // USART enable
+        uesm: Enable, // USART enable in low-power mode
+        re: Enable, // Receiver enable
+        te: Enable, // Transmitter enable
+        idleie: Enable, // IDLE interrupt enable
+        rxfneie: Enable, // RXFIFO not empty interrupt enable
+        tcie: Enable, // Transmission complete interrupt enable
+        txfnfie: Enable, // TXFIFO not full interrupt enable
+        peie: Enable, // PE interrupt enable
+        ps: Ps, // Parity selection
+        pce: Enable, // Parity control enable
+        wake: Wake, // Receiver wake-up method
         m0: u1, // Word length
-        mme: u1, // Mute mode enable
-        cmie: u1, // Character match interrupt enable
-        over8: u1, // Oversampling mode
+        mme: Enable, // Mute mode enable
+        cmie: Enable, // Character match interrupt enable
+        over8: Over8, // Oversampling mode
         dedt: u5, // Driver enable deassertion time
         deat: u5, // Driver enable assertion time
-        rtoie: u1, // Receiver timeout interrupt enable
-        eobie: u1, // End of block interrupt enable
+        rtoie: Enable, // Receiver timeout interrupt enable
+        eobie: Enable, // End of block interrupt enable
         m1: u1, // Word length
-        fifoen: u1, // FIFO mode enable
-        txfeie: u1, // TXFIFO empty interrupt enable
-        rxffie: u1, // RXFIFO full interrupt enable
+        fifoen: Enable, // FIFO mode enable
+        txfeie: Enable, // TXFIFO empty interrupt enable
+        rxffie: Enable, // RXFIFO full interrupt enable
+
+        pub const Ps = enum(u1) {
+            even = 0b0,
+            odd = 0b1,
+        };
+
+        pub const Wake = enum(u1) {
+            idle_line = 0b0,
+            address_mark = 0b1,
+        };
+
+        pub const Over8 = enum(u1) {
+            oversampling16 = 0b0,
+            oversampling8 = 0b1,
+        };
     };
 
     pub const Cr2 = packed struct(u32) {
-        slven: u1, // Synchronous target enable
+        slven: Enable, // Synchronous target enable
         _reserved0: u2, // Reserved
-        dis_nss: u1, // NSS pin input ignored enable
-        addm7: u1, // 7-bit address detection/4-bit address detection
-        lbdl: u1, // LIN break detection length
-        lbdie: u1, // LIN break detection interrupt enable
+        dis_nss: Enable, // NSS pin input ignored enable
+        addm7: Addm7, // 7-bit address detection/4-bit address detection
+        lbdl: Lbdl, // LIN break detection length
+        lbdie: Enable, // LIN break detection interrupt enable
         _reserved1: u1, // Reserved
-        lbcl: u1, // Last bit clock pulse
-        cpha: u1, // Clock phase
-        cpol: u1, // Clock polarity
-        clken: u1, // Clock enable
-        stop: u2, // Stop bits
-        linen: u1, // LIN mode enable
-        swap: u1, // Swap TX/RX pins
-        rxinv: u1, // RX pin active level inversion
-        txinv: u1, // TX pin active level inversion
-        datainv: u1, // Binary data inversion
-        msbfirst: u1, // Most significant bit first
-        abren: u1, // Auto baud rate enable
-        abrmod: u2, // Auto baud rate mode
-        rtoen: u1, // Receiver timout enable
+        lbcl: Enable, // Last bit clock pulse
+        cpha: Cpha, // Clock phase
+        cpol: Cpol, // Clock polarity
+        clken: Enable, // Clock enable
+        stop: Stop, // Stop bits
+        linen: Enable, // LIN mode enable
+        swap: Enable, // Swap TX/RX pins
+        rxinv: Enable, // RX pin active level inversion
+        txinv: Enable, // TX pin active level inversion
+        datainv: Enable, // Binary data inversion
+        msbfirst: Enable, // Most significant bit first
+        abren: Enable, // Auto baud rate enable
+        abrmod: Abrmod, // Auto baud rate mode
+        rtoen: Enable, // Receiver timout enable
         add: u8, // Address of the USART node
+
+        pub const Addm7 = enum(u1) {
+            @"4bit" = 0b0,
+            @"7bit" = 0b1,
+        };
+
+        pub const Lbdl = enum(u1) {
+            @"10bit" = 0b0,
+            @"11bit" = 0b1,
+        };
+
+        pub const Cpha = enum(u1) {
+            first_data_capture = 0b0,
+            second_data_capture = 0b1,
+        };
+
+        pub const Cpol = enum(u1) {
+            low = 0b0,
+            high = 0b1,
+        };
+
+        pub const Stop = enum(u2) {
+            @"1bit" = 0b00,
+            @"0.5bit" = 0b01,
+            @"2bit" = 0b10,
+            @"1.5bit" = 0b11,
+        };
+
+        pub const Abrmod = enum(u2) {
+            start_bit = 0b00,
+            falling_edge = 0b01,
+            @"0x7f" = 0b10,
+            @"0x55" = 0b11,
+        };
     };
 
     pub const Cr3 = packed struct(u32) {
-        eie: u1, // Error interrupt enable
-        iren: u1, // IrDA mode enable
+        eie: Enable, // Error interrupt enable
+        iren: Enable, // IrDA mode enable
         irlp: u1, // IrDA low power
         hdsel: u1, // Half-duplex selection
-        nack: u1, // Smartcard nack enable
-        scen: u1, // Smartcard mode enable
+        nack: Enable, // Smartcard nack enable
+        scen: Enable, // Smartcard mode enable
         dmar: u1, // DMA enable receiver
         dmat: u1, // DMA enable transmitter
-        rtse: u1, // RTS enable
-        ctse: u1, // CTS enable
-        ctsie: u1, // CTS interrupt enable
-        onebit: u1, // One sample bit method enable
+        rtse: Enable, // RTS enable
+        ctse: Enable, // CTS enable
+        ctsie: Enable, // CTS interrupt enable
+        onebit: Enable, // One sample bit method enable
         ovrdis: u1, // Overrun disable
         ddre: u1, // DMA disable on reception error
-        dem: u1, // Driver enable mode
+        dem: Enable, // Driver enable mode
         dep: u1, // Driver enable polarity selection
         _reserved0: u1,
         scarcnt: u3, // Smartcard auto-retry count
         _reserved1: u3,
-        txftie: u1, // TXFIFO threshold interrupt enable
-        tcbgtie: u1, // Transmission complete before guard time, interrupt enable
+        txftie: Enable, // TXFIFO threshold interrupt enable
+        tcbgtie: Enable, // Transmission complete before guard time, interrupt enable
         rxftcfg: u3, // Receive FIFO threshold configuration
-        rxftie: u1, // RXFIFO threshold interrupt enable
+        rxftie: Enable, // RXFIFO threshold interrupt enable
         txftcfg: u3, // TXFIFO threshold configuration
     };
 
@@ -115,5 +164,10 @@ pub const Usart = packed struct {
             div128 = 0b1010,
             div256 = 0b1011,
         };
+    };
+
+    pub const Enable = enum(u1) {
+        disable = 0b0,
+        enable = 0b1,
     };
 };
