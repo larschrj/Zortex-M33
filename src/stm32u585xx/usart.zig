@@ -10,7 +10,7 @@ pub const Usart = packed struct {
     icr: u32 = @as(u32, 0x00000000), // Interrupt flag clear register, Address offset 0x20
     rdr: u32 = @as(u32, 0x00000000), // Receive data register, Address offset 0x24
     tdr: u32 = @as(u32, 0x00000000), // Transmit data register, Address offset 0x28
-    presc: u32 = @as(u32, 0x00000000), // Prescaler register, Address offset 0x2c
+    presc: Presc = @as(u32, 0x00000000), // Prescaler register, Address offset 0x2c
     autocr: u32 = @as(u32, 0x80000000), // Autonomous mode control register, Address offset 0x30
 
     pub const Cr1 = packed struct(u32) {
@@ -95,5 +95,25 @@ pub const Usart = packed struct {
     pub const Brr = packed struct(u32) {
         brr: u16, // USART baud rate
         _reserved0: u16,
+    };
+
+    pub const Presc = packed struct(u32) {
+        prescaler: Prescaler,
+        _reserved0: u28,
+
+        pub const Prescaler = enum(u4) {
+            div1 = 0b0000,
+            div2 = 0b0001,
+            div4 = 0b0010,
+            div6 = 0b0011,
+            div8 = 0b0100,
+            div10 = 0b0101,
+            div12 = 0b0110,
+            div16 = 0b0111,
+            div32 = 0b1000,
+            div64 = 0b1001,
+            div128 = 0b1010,
+            div256 = 0b1011,
+        };
     };
 };

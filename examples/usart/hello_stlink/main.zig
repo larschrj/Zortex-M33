@@ -10,6 +10,7 @@ pub fn main() void {
     clockConfig();
     gpioConfig();
     sysTickConfig();
+    usart1Config();
 
     while (true) {}
 }
@@ -41,6 +42,12 @@ fn clockConfig() void {
 
     // systick clock = hclk/8 = 500 kHz
     rcc.ccipr1.systicksel = .hclkdiv8;
+
+    // APB2 clock = hclk/16 = 250 kHz
+    rcc.cfgr2.ppre2 = .div16;
+
+    // usart1 clock = APB2 clock = 250 kHz
+    rcc.ccipr1.usart1sel = .pclk2;
 }
 
 fn gpioConfig() void {
@@ -75,4 +82,8 @@ fn sysTickConfig() void {
     core_cm33.systick.ctrl.clkSource = .ahbDivide8;
     core_cm33.systick.ctrl.tickInt = .exceptionReqEnable;
     core_cm33.systick.ctrl.enable = .enable;
+}
+
+fn usart1Config() void {
+    usart1.presc.prescaler = .div1;
 }

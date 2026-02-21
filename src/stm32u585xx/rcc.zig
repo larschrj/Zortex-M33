@@ -172,18 +172,18 @@ pub const Rcc = packed struct {
     };
 
     const Cfgr2 = packed struct(u32) {
-        hpre: Hpre,
-        ppre1: Ppre,
+        hpre: Hpre, // AHB prescaler
+        ppre1: Ppre, // APB1 prescaler
         _reserved0: u1,
-        ppre2: Ppre,
+        ppre2: Ppre, // APB2 prescaler
         _reserved1: u1,
-        dpre: Ppre,
+        dpre: Ppre, // DSI PHY prescaler
         _reserved2: u1,
-        ahb1dis: u1,
-        ahb2dis1: u1,
-        ahb2dis2: u1,
-        apb1dis: u1,
-        apb2dis: u1,
+        ahb1dis: u1, // AHB1 clock disable
+        ahb2dis1: u1, // AHB2_1 clock disable
+        ahb2dis2: u1, // AHB2_2 clock disable
+        apb1dis: u1, // APB1 clock disable
+        apb2dis: u1, // APB2 clock disable
         _reserved3: u11,
 
         const Hpre = enum(u4) {
@@ -209,11 +209,19 @@ pub const Rcc = packed struct {
 
     const Cfgr3 = packed struct(u32) {
         _reserved0: u4,
-        ppre3: u3,
+        ppre3: Ppre3, // APB3 prescaler
         _reserved1: u9,
-        ahb3dis: u1,
-        apb3dis: u1,
+        ahb3dis: u1, // AHB3 clock disable
+        apb3dis: u1, // APB3 clock disable
         _reserved2: u14,
+
+        const Ppre3 = enum(u3) {
+            div1 = 0b000,
+            div2 = 0b100,
+            div4 = 0b101,
+            div8 = 0b110,
+            div16 = 0b111,
+        };
     };
 
     const Pll1cfgr = packed struct(u32) {
