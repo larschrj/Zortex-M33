@@ -10,7 +10,7 @@ pub const Usart = packed struct {
     icr: u32 = @as(u32, 0x00000000), // Interrupt flag clear register, Address offset 0x20
     rdr: u32 = @as(u32, 0x00000000), // Receive data register, Address offset 0x24
     tdr: u32 = @as(u32, 0x00000000), // Transmit data register, Address offset 0x28
-    presc: Presc = @as(u32, 0x00000000), // Prescaler register, Address offset 0x2c
+    presc: Presc = @bitCast(@as(u32, 0x00000000)), // Prescaler register, Address offset 0x2c
     autocr: u32 = @as(u32, 0x80000000), // Autonomous mode control register, Address offset 0x30
 
     pub const Cr1 = packed struct(u32) {
@@ -127,18 +127,32 @@ pub const Usart = packed struct {
         ctse: Enable, // CTS enable
         ctsie: Enable, // CTS interrupt enable
         onebit: Enable, // One sample bit method enable
-        ovrdis: u1, // Overrun disable
-        ddre: u1, // DMA disable on reception error
+        ovrdis: Disable, // Overrun disable
+        ddre: Enable, // DMA disable on reception error
         dem: Enable, // Driver enable mode
-        dep: u1, // Driver enable polarity selection
+        dep: Dep, // Driver enable polarity selection
         _reserved0: u1,
         scarcnt: u3, // Smartcard auto-retry count
         _reserved1: u3,
         txftie: Enable, // TXFIFO threshold interrupt enable
         tcbgtie: Enable, // Transmission complete before guard time, interrupt enable
-        rxftcfg: u3, // Receive FIFO threshold configuration
+        rxftcfg: Ftcfg, // Receive FIFO threshold configuration
         rxftie: Enable, // RXFIFO threshold interrupt enable
-        txftcfg: u3, // TXFIFO threshold configuration
+        txftcfg: Ftcfg, // TXFIFO threshold configuration
+
+        pub const Dep = enum(u1) {
+            active_high = 0b0,
+            active_low = 0b1,
+        };
+
+        pub const Ftcfg = enum(u3) {
+            @"1/8" = 0b000,
+            @"1/4" = 0b001,
+            @"1/2" = 0b010,
+            @"3/4" = 0b011,
+            @"7/8" = 0b100,
+            empty = 0b101,
+        };
     };
 
     pub const Brr = packed struct(u32) {
@@ -169,5 +183,10 @@ pub const Usart = packed struct {
     pub const Enable = enum(u1) {
         disable = 0b0,
         enable = 0b1,
+    };
+
+    pub const Disable = enum(u1) {
+        enable = 0b0,
+        disable = 0b1,
     };
 };
