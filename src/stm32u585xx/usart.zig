@@ -117,12 +117,12 @@ pub const Usart = packed struct {
     pub const Cr3 = packed struct(u32) {
         eie: Enable, // Error interrupt enable
         iren: Enable, // IrDA mode enable
-        irlp: u1, // IrDA low power
-        hdsel: u1, // Half-duplex selection
+        irlp: Irlp, // IrDA low power
+        hdsel: Enable, // Half-duplex selection
         nack: Enable, // Smartcard nack enable
         scen: Enable, // Smartcard mode enable
-        dmar: u1, // DMA enable receiver
-        dmat: u1, // DMA enable transmitter
+        dmar: Enable, // DMA enable receiver
+        dmat: Enable, // DMA enable transmitter
         rtse: Enable, // RTS enable
         ctse: Enable, // CTS enable
         ctsie: Enable, // CTS interrupt enable
@@ -139,6 +139,11 @@ pub const Usart = packed struct {
         rxftcfg: Ftcfg, // Receive FIFO threshold configuration
         rxftie: Enable, // RXFIFO threshold interrupt enable
         txftcfg: Ftcfg, // TXFIFO threshold configuration
+
+        pub const Irlp = enum(u1) {
+            normal_mode = 0b0,
+            low_power = 0b1,
+        };
 
         pub const Dep = enum(u1) {
             active_high = 0b0,

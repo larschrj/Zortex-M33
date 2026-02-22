@@ -43,11 +43,11 @@ fn clockConfig() void {
     // systick clock = hclk/8 = 500 kHz
     rcc.ccipr1.systicksel = .hclkdiv8;
 
-    // APB2 clock = hclk/16 = 250 kHz
-    rcc.cfgr2.ppre2 = .div16;
+    // APB2 clock = hclk/1 = 4 MHz
+    rcc.cfgr2.ppre2 = .div1;
 
-    // usart1 ker clock = APB2 clock = 250 kHz
-    rcc.ccipr1.usart1sel = .pclk2;
+    // usart1 ker clock = sysclk = 4 MHz
+    rcc.ccipr1.usart1sel = .sysclk;
     rcc.apb2enr.usart1en = .enable;
 }
 
@@ -86,5 +86,14 @@ fn sysTickConfig() void {
 }
 
 fn usart1Config() void {
+    usart1.cr1.ue = .disable;
+    usart1.cr1.over8 = .oversampling16;
     usart1.presc.prescaler = .div1;
+
+    // 9600 baud = usart1_per_ck/brr
+    usart1.brr.brr = 416;
+
+    // 8 bit character length
+    usart1.cr1.m0 = 0b0;
+    usart1.cr1.m1 = 0b0;
 }
