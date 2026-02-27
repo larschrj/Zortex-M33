@@ -6,10 +6,10 @@ pub const Usart = packed struct {
     gtpr: u32 = @as(u32, 0x00000000), // Guard time and prescale register, Address offset 0x10
     rtor: u32 = @as(u32, 0x00000000), // Receiver timeout register, Address offset 0x14
     rqr: u32 = @as(u32, 0x00000000), // Request register, Address offset 0x18
-    isr: u32 = @as(u32, 0x000000c0), // Interrupt and status register, Address offset 0x1c
+    isr: Isr = @bitCast(@as(u32, 0x000000c0)), // Interrupt and status register, Address offset 0x1c
     icr: u32 = @as(u32, 0x00000000), // Interrupt flag clear register, Address offset 0x20
-    rdr: u32 = @as(u32, 0x00000000), // Receive data register, Address offset 0x24
-    tdr: u32 = @as(u32, 0x00000000), // Transmit data register, Address offset 0x28
+    rdr: Rdr = @bitCast(@as(u32, 0x00000000)), // Receive data register, Address offset 0x24
+    tdr: Tdr = @bitCast(@as(u32, 0x00000000)), // Transmit data register, Address offset 0x28
     presc: Presc = @bitCast(@as(u32, 0x00000000)), // Prescaler register, Address offset 0x2c
     autocr: u32 = @as(u32, 0x80000000), // Autonomous mode control register, Address offset 0x30
 
@@ -163,6 +163,48 @@ pub const Usart = packed struct {
     pub const Brr = packed struct(u32) {
         brr: u16, // USART baud rate
         _reserved0: u16,
+    };
+
+    pub const Isr = packed struct(u32) {
+        pe: u1, // Parity error
+        fe: u1, // Framing error
+        ne: u1, // Noise detection flag
+        ore: u1, // Overrun error
+        idle: u1, // Idle line detected
+        rxfne: u1, // RXFIFO not empty
+        tc: u1, // Transmission complete
+        txfnf: u1, // TXFIFO not full
+        lbdf: u1, // LIN break detection flag
+        ctsif: u1, // CTS interrupt flag
+        cts: u1, // CTS flag
+        rtof: u1, // Receiver timeout
+        eobf: u1, // End of block flag
+        udr: u1, // SPI target underrun error flag
+        abre: u1, // Auto baud rate error
+        abrf: u1, // Auto baud rate flag
+        busy: u1, // Busy flag
+        cmf: u1, // Character match flag
+        sbkf: u1, // Send break flag
+        rwu: u1, // Receiver wake up from mute mode
+        _reserved0: u1,
+        teack: u1, // Transmit enable acknowledge flag
+        reack: u1, // Receive enable acknowledge flag
+        txfe: u1, // TXFIFO empty
+        rxff: u1, // RXFIFO full
+        tcbgt: u1, // Transmission complete before guard time flag
+        rxft: u1, // RXFIFO threshold flag
+        txft: u1, // TXFIFO threshold flag
+        _reserved1: u4,
+    };
+
+    pub const Rdr = packed struct(u32) {
+        rdr: u9,
+        _reserved0: u23,
+    };
+
+    pub const Tdr = packed struct(u32) {
+        tdr: u9,
+        _reserved0: u23,
     };
 
     pub const Presc = packed struct(u32) {

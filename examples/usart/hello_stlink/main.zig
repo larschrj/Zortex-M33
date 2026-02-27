@@ -4,6 +4,9 @@ export const rcc = @import("stm32u585xx").rcc;
 export const gpioa = @import("stm32u585xx").gpioa;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const usart1 = @import("stm32u585xx").usart1;
+const Usart = @import("stm32u585xx").Usart;
+
+const text = "Hello World!\nHello Stlink!\n";
 
 pub fn main() void {
     core_cm33.enableIrq();
@@ -11,6 +14,8 @@ pub fn main() void {
     gpioConfig();
     sysTickConfig();
     usart1Config();
+
+    usartTransmitPolling(usart1, text);
 
     while (true) {}
 }
@@ -37,7 +42,7 @@ fn clockConfig() void {
 
     // AHB prescaler, hclk = sysclk/1 = 4 MHz
     rcc.cfgr2.hpre = .div1;
-    rcc.ahb2enr1.gpioben = .enable;
+    rcc.ahb2enr1.gpioaen = .enable;
     rcc.ahb2enr1.gpiohen = .enable;
 
     // systick clock = hclk/8 = 500 kHz
@@ -96,4 +101,22 @@ fn usart1Config() void {
     // 8 bit character length
     usart1.cr1.m0 = 0b0;
     usart1.cr1.m1 = 0b0;
+
+    // No parity
+    usart1.cr1.pce = .disable;
+
+    // 1 stop bit
+    usart1.cr2.stop = .@"1bit";
+
+    // Enable usart1
+    usart1.cr1.ue = .enable;
+}
+
+fn usartTransmitPolling(usart: *volatile Usart, tx_buffer: []const u8) void {
+    usart.cr1.te = .enable;
+    for (tx_buffer) |char| {
+        while (usart1.isr.txfnf == 0) {}
+        usart1.tdr.tdr = char;
+    }
+    usart1.cr1.te = .disable;
 }
