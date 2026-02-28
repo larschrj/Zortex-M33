@@ -185,3 +185,25 @@ pub fn usartTransmitPolling(usart: *volatile Usart, tx_buffer: []const u8) void 
     }
     usart1.cr1.te = .disable;
 }
+
+pub fn integerToString(buf: *[12]u8, val: i32) void {
+    var temp = [_]u8{' '} ** buf.len;
+    const is_negative = val < 0;
+    var x = val;
+    var lastInd: usize = 0;
+    for (&temp, 0..) |*c, i| {
+        c.* = @as(u8, @intCast(@rem(x, 10))) + @as(u8, '0');
+        x = @divTrunc(x, 10);
+        if (x == 0) {
+            lastInd = i;
+            break;
+        }
+    }
+    if (is_negative) {
+        lastInd = lastInd + 1;
+        temp[lastInd] = '-';
+    }
+    for (0..(lastInd + 1)) |i| {
+        buf[i] = temp[lastInd - i];
+    }
+}
