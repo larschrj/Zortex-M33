@@ -189,7 +189,7 @@ pub fn build(b: *std.Build) void {
     b_u585_i2c_usart_hts221_polling_root_module.addImport("Hts221", Hts221);
     const b_u585_i2c_usart_hts221_polling_exe = b.addExecutable(.{
         .name = "b_u585_i2c_usart_hts221_polling.elf",
-        .root_module = b_u585_i2c_hts221_polling_root_module,
+        .root_module = b_u585_i2c_usart_hts221_polling_root_module,
     });
     b_u585_i2c_usart_hts221_polling_exe.entry = .{ .symbol_name = "Reset_Handler" };
     b_u585_i2c_usart_hts221_polling_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));

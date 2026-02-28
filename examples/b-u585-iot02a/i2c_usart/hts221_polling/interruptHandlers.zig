@@ -1,3 +1,4 @@
+const std = @import("std");
 const gpioh = @import("stm32u585xx").gpioh;
 const i2c2 = @import("stm32u585xx").i2c2;
 const main = @import("main.zig");
@@ -27,8 +28,15 @@ pub fn SysTick_Handler() callconv(.c) void {
     gpioh.odr.p6 ^= 0b1;
     gpioh.odr.p7 ^= 0b1;
 
+    // Read humidity and temperature
     const sensor = main.hts221.getSensor();
-    _ = sensor;
+    std.mem.doNotOptimizeAway(sensor);
+
+    // Convert sensor data to strings
+
+    // Transmit sensor data
+    main.usartTransmitPolling(main.usart1, "Temperature = \r\n");
+    main.usartTransmitPolling(main.usart1, "Humidity = \r\n");
 }
 
 pub fn I2C2_EV_IRQHandler() callconv(.c) void {

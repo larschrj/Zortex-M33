@@ -4,7 +4,7 @@ export const rcc = @import("stm32u585xx").rcc;
 export const gpioa = @import("stm32u585xx").gpioa;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c2 = @import("stm32u585xx").i2c2;
-export const usart1 = @import("stm32u585xx").usart1;
+pub const usart1 = @import("stm32u585xx").usart1;
 const Usart = @import("stm32u585xx").Usart;
 const Hts221 = @import("Hts221");
 
@@ -13,7 +13,6 @@ pub var hts221: Hts221 = .{
     .read_func = &hts221Read,
     .write_func = &hts221Write,
 };
-var sensor: Hts221.Sensor = undefined;
 
 fn hts221Read(register_address: u8, receive_buffer: []u8) void {
     i2c2.readMultiplePolling(hts221.addr, register_address, receive_buffer);
@@ -24,18 +23,15 @@ fn hts221Write(register_address: u8, receive_buffer: []u8) void {
 }
 
 pub fn main() void {
-    core_cm33.enableIrq();
     clockConfig();
     gpioConfig();
     i2c2Config();
+    usart1Config();
     sysTickConfig();
-    std.mem.doNotOptimizeAway(sensor);
-
     hts221.initSensor(.@"12.5Hz");
-
-    while (true) {
-        sensor = hts221.getSensor();
-    }
+    usartTransmitPolling(usart1, "HTS221 initialised\r\n");
+    core_cm33.enableIrq();
+    while (true) {}
 }
 
 fn clockConfig() void {
@@ -60,6 +56,8 @@ fn clockConfig() void {
 
     // AHB prescaler, hclk = sysclk/1 = 4 MHz
     rcc.cfgr2.hpre = .div1;
+
+    // GPIO clock
     rcc.ahb2enr1.gpioaen = .enable;
     rcc.ahb2enr1.gpiohen = .enable;
 
@@ -72,8 +70,6 @@ fn clockConfig() void {
     // I2C2 clock, use APB1 clock = 4 MHz
     rcc.ccipr1.i2c2sel = .pclk1;
     rcc.apb1enr1.i2c2en = .enable;
-    rcc.apb1rstr1.i2c1rst = .resetClock;
-    rcc.apb1rstr1.i2c1rst = .noClockReset;
 
     // APB2 clock = hclk/1 = 4 MHz
     rcc.cfgr2.ppre2 = .div1;

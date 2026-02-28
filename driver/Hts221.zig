@@ -166,6 +166,7 @@ pub const I2c_addr = enum(u8) {
 const Hts221ReadFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 const Hts221WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 
+init: bool = false,
 addr: u8 = undefined,
 read_func: Hts221ReadFunc = null,
 write_func: Hts221WriteFunc = null,
@@ -213,6 +214,7 @@ pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
     };
     var buffer: [1]u8 = @bitCast(ctrl_reg1);
     self.write_func.?(@intFromPtr(&registers.ctrl_reg1), buffer[0..1]);
+    self.init = true;
 }
 
 pub fn getAdc(self: *Hts221) void {
