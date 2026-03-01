@@ -315,33 +315,113 @@ pub const GpioA = packed struct {
             usart2_rts = 7,
         };
 
-        const P2 = enum(u4) {};
+        const P2 = enum(u4) {
+            tim2_ch3 = 1,
+            tim5_ch3 = 2,
+            tim15_ch1 = 4,
+            lptim1_in2 = 5,
+            usart2_tx = 7,
+        };
 
-        const P3 = enum(u4) {};
+        const P3 = enum(u4) {
+            tim2_ch4 = 1,
+            tim5_ch4 = 2,
+            octospi1_clk = 3,
+            tim15_ch2 = 4,
+            spi2_nss = 5,
+            sai1_sd_b = 6,
+            usart2_rx = 7,
+        };
 
-        const P4 = enum(u4) {};
+        const P4 = enum(u4) {
+            tim5_etr = 2,
+            lptim2_ch1 = 3,
+            spi1_nss = 5,
+            spi3_nss = 6,
+            usart2_ck = 7,
+        };
 
-        const P5 = enum(u4) {};
+        const P5 = enum(u4) {
+            tim2_ch1 = 1,
+            tim8_ch1n = 3,
+            spi1_sck = 5,
+        };
 
-        const P6 = enum(u4) {};
+        const P6 = enum(u4) {
+            tim1_bkin = 1,
+            tim3_ch1 = 2,
+            tim8_bkin = 3,
+            spi1_miso = 5,
+            octospi1_io3 = 6,
+            usart11_tx = 7,
+        };
 
-        const P7 = enum(u4) {};
+        const P7 = enum(u4) {
+            tim1_ch1n = 1,
+            tim3_ch2 = 2,
+            tim8_ch1n = 3,
+            spi1_mosi = 5,
+            usart11_rx = 7,
+        };
 
-        const P8 = enum(u4) {};
+        const P8 = enum(u4) {
+            mco1 = 0,
+            tim1_ch1 = 1,
+            tim8_bkin2 = 3,
+            i2c3_scl = 4,
+            spi1_rdy = 5,
+            usart1_ck = 7,
+        };
 
-        const P9 = enum(u4) {};
+        const P9 = enum(u4) {
+            tim1_ch2 = 1,
+            lpuart1_tx = 3,
+            i2c3_smba = 4,
+            spi2_sck = 5,
+            usart1_tx = 7,
+        };
 
-        const P10 = enum(u4) {};
+        const P10 = enum(u4) {
+            tim1_ch3 = 1,
+            lpuart1_rx = 3,
+            lptim2_in2 = 4,
+            ucpd1_frstx = 6,
+            usart1_rx = 7,
+        };
 
-        const P11 = enum(u4) {};
+        const P11 = enum(u4) {
+            tim1_ch4 = 1,
+            lpuart1_cts = 3,
+            spi2_nss = 5,
+            uart4_rx = 6,
+            usart1_cts = 7,
+        };
 
-        const P12 = enum(u4) {};
+        const P12 = enum(u4) {
+            tim1_etr = 1,
+            lpuart1_rts = 3,
+            spi2_sck = 5,
+            uart4_tx = 6,
+            usart1_rts = 7,
+        };
 
-        const P13 = enum(u4) {};
+        const P13 = enum(u4) {
+            jtms = 0,
+        };
 
-        const P14 = enum(u4) {};
+        const P14 = enum(u4) {
+            jtck = 0,
+        };
 
-        const P15 = enum(u4) {};
+        const P15 = enum(u4) {
+            jtdi = 0,
+            tim2_ch1 = 1,
+            lptim3_in2 = 2,
+            hdmi_cec = 4,
+            spi1_nss = 5,
+            spi3_nss = 6,
+            spi6_nss = 7,
+        };
     };
 };
 
