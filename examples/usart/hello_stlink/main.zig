@@ -3,10 +3,9 @@ const core_cm33 = @import("stm32u585xx").core_cm33;
 export const rcc = @import("stm32u585xx").rcc;
 export const gpioa = @import("stm32u585xx").gpioa;
 export const gpioh = @import("stm32u585xx").gpioh;
-export const usart1 = @import("stm32u585xx").usart1;
-const Usart = @import("stm32u585xx").Usart;
+pub const usart1 = @import("stm32u585xx").usart1;
 
-const text = "Hello World!\nHello Stlink!\n";
+pub const text = "Hello World!\r\nHello Stlink!\r\n";
 
 pub fn main() void {
     core_cm33.enableIrq();
@@ -14,9 +13,6 @@ pub fn main() void {
     gpioConfig();
     sysTickConfig();
     usart1Config();
-
-    usartTransmitPolling(usart1, text);
-
     while (true) {}
 }
 
@@ -110,13 +106,4 @@ fn usart1Config() void {
 
     // Enable usart1
     usart1.cr1.ue = .enable;
-}
-
-fn usartTransmitPolling(usart: *volatile Usart, tx_buffer: []const u8) void {
-    usart.cr1.te = .enable;
-    for (tx_buffer) |char| {
-        while (usart1.isr.txfnf == 0) {}
-        usart1.tdr.tdr = char;
-    }
-    usart1.cr1.te = .disable;
 }

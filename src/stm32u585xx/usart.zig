@@ -236,4 +236,13 @@ pub const Usart = packed struct {
         enable = 0b0,
         disable = 0b1,
     };
+
+    pub fn transmitPolling(self: *volatile @This(), tx_buffer: []const u8) void {
+        self.cr1.te = .enable;
+        for (tx_buffer) |char| {
+            while (self.isr.txfnf == 0) {}
+            self.tdr.tdr = char;
+        }
+        self.cr1.te = .disable;
+    }
 };

@@ -5,7 +5,6 @@ export const gpioa = @import("stm32u585xx").gpioa;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c2 = @import("stm32u585xx").i2c2;
 pub const usart1 = @import("stm32u585xx").usart1;
-const Usart = @import("stm32u585xx").Usart;
 const Hts221 = @import("Hts221");
 
 pub var hts221: Hts221 = .{
@@ -29,7 +28,7 @@ pub fn main() void {
     usart1Config();
     sysTickConfig();
     hts221.initSensor(.@"12.5Hz");
-    usartTransmitPolling(usart1, "HTS221 initialised\r\n");
+    usart1.transmitPolling("HTS221 initialised\r\n");
     core_cm33.enableIrq();
     while (true) {}
 }
@@ -175,15 +174,6 @@ fn usart1Config() void {
 
     // Enable usart1
     usart1.cr1.ue = .enable;
-}
-
-pub fn usartTransmitPolling(usart: *volatile Usart, tx_buffer: []const u8) void {
-    usart.cr1.te = .enable;
-    for (tx_buffer) |char| {
-        while (usart1.isr.txfnf == 0) {}
-        usart1.tdr.tdr = char;
-    }
-    usart1.cr1.te = .disable;
 }
 
 pub fn integerToString(buf: *[12]u8, val: i32) void {

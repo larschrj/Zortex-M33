@@ -35,12 +35,12 @@ pub fn SysTick_Handler() callconv(.c) void {
     // Convert sensor data to strings
 
     // Transmit sensor data
-    main.usartTransmitPolling(main.usart1, "Temperature = ");
+    main.usart1.transmitPolling("Temperature = ");
     var tempString = [_]u8{' '} ** 12;
     main.integerToString(&tempString, sensor.temperature);
-    main.usartTransmitPolling(main.usart1, &tempString);
-    main.usartTransmitPolling(main.usart1, "\r\n");
-    main.usartTransmitPolling(main.usart1, "Humidity = \r\n");
+    main.usart1.transmitPolling(&tempString);
+    main.usart1.transmitPolling("\r\n");
+    main.usart1.transmitPolling("Humidity = \r\n");
 }
 
 pub fn I2C2_EV_IRQHandler() callconv(.c) void {
