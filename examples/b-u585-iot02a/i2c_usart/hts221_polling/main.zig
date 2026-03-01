@@ -1,16 +1,17 @@
 const std = @import("std");
 const core_cm33 = @import("stm32u585xx").core_cm33;
 export const rcc = @import("stm32u585xx").rcc;
+export const gpioa = @import("stm32u585xx").gpioa;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c2 = @import("stm32u585xx").i2c2;
+pub const usart1 = @import("stm32u585xx").usart1;
 const Hts221 = @import("Hts221");
 
-var hts221: Hts221 = .{
+pub var hts221: Hts221 = .{
     .addr = @intFromEnum(Hts221.I2c_addr.@"0x5f"),
     .read_func = &hts221Read,
     .write_func = &hts221Write,
 };
-var sensor: Hts221.Sensor = undefined;
 
 fn hts221Read(register_address: u8, receive_buffer: []u8) void {
     i2c2.readMultiplePolling(hts221.addr, register_address, receive_buffer);
@@ -21,18 +22,15 @@ fn hts221Write(register_address: u8, receive_buffer: []u8) void {
 }
 
 pub fn main() void {
-    core_cm33.enableIrq();
     clockConfig();
     gpioConfig();
     i2c2Config();
+    usart1Config();
     sysTickConfig();
-    std.mem.doNotOptimizeAway(sensor);
-
     hts221.initSensor(.@"12.5Hz");
-
-    while (true) {
-        sensor = hts221.getSensor();
-    }
+    usart1.transmitPolling("HTS221 initialised\r\n");
+    core_cm33.enableIrq();
+    while (true) {}
 }
 
 fn clockConfig() void {
@@ -57,20 +55,43 @@ fn clockConfig() void {
 
     // AHB prescaler, hclk = sysclk/1 = 4 MHz
     rcc.cfgr2.hpre = .div1;
+
+    // GPIO clock
+    rcc.ahb2enr1.gpioaen = .enable;
     rcc.ahb2enr1.gpiohen = .enable;
 
     // systick clock = hclk/8 = 500 kHz
     rcc.ccipr1.systicksel = .hclkdiv8;
 
-    // I2C2 clock, use pclk = hclk/1 = 4 MHz
+    // APB1 clock = hclk/1 = 4 MHz
     rcc.cfgr2.ppre1 = .div1;
+
+    // I2C2 clock, use APB1 clock = 4 MHz
     rcc.ccipr1.i2c2sel = .pclk1;
     rcc.apb1enr1.i2c2en = .enable;
-    rcc.apb1rstr1.i2c1rst = .resetClock;
-    rcc.apb1rstr1.i2c1rst = .noClockReset;
+
+    // APB2 clock = hclk/1 = 4 MHz
+    rcc.cfgr2.ppre2 = .div1;
+
+    // usart1 ker clock = sysclk = 4 MHz
+    rcc.ccipr1.usart1sel = .sysclk;
+    rcc.apb2enr.usart1en = .enable;
 }
 
 fn gpioConfig() void {
+    // Virtual com port
+    gpioa.moder.p9 = .alternate_function;
+    gpioa.afr.p9 = .usart1_tx;
+    gpioa.otyper.p9 = .push_pull;
+    gpioa.pupdr.p9 = .no_pullup_pulldown;
+    gpioa.ospeedr.p9 = .high;
+
+    gpioa.moder.p10 = .alternate_function;
+    gpioa.afr.p10 = .usart1_rx;
+    gpioa.otyper.p10 = .push_pull; // Ignored, reset value
+    gpioa.pupdr.p10 = .pullup;
+    gpioa.ospeedr.p10 = .low; // Ignored, reset value
+
     // user leds
     gpioh.moder.p6 = .output;
     gpioh.otyper.p6 = .push_pull;
@@ -131,4 +152,48 @@ fn sysTickConfig() void {
     core_cm33.systick.ctrl.clkSource = .ahbDivide8;
     core_cm33.systick.ctrl.tickInt = .exceptionReqEnable;
     core_cm33.systick.ctrl.enable = .enable;
+}
+
+fn usart1Config() void {
+    usart1.cr1.ue = .disable;
+    usart1.cr1.over8 = .oversampling16;
+    usart1.presc.prescaler = .div1;
+
+    // 9600 baud = usart1_per_ck/brr
+    usart1.brr.brr = 416;
+
+    // 8 bit character length
+    usart1.cr1.m0 = 0b0;
+    usart1.cr1.m1 = 0b0;
+
+    // No parity
+    usart1.cr1.pce = .disable;
+
+    // 1 stop bit
+    usart1.cr2.stop = .@"1bit";
+
+    // Enable usart1
+    usart1.cr1.ue = .enable;
+}
+
+pub fn integerToString(buf: *[12]u8, val: i32) void {
+    var temp = [_]u8{' '} ** buf.len;
+    const is_negative = val < 0;
+    var x = val;
+    var lastInd: usize = 0;
+    for (&temp, 0..) |*c, i| {
+        c.* = @as(u8, @intCast(@rem(x, 10))) + @as(u8, '0');
+        x = @divTrunc(x, 10);
+        if (x == 0) {
+            lastInd = i;
+            break;
+        }
+    }
+    if (is_negative) {
+        lastInd = lastInd + 1;
+        temp[lastInd] = '-';
+    }
+    for (0..(lastInd + 1)) |i| {
+        buf[i] = temp[lastInd - i];
+    }
 }

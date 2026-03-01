@@ -60,6 +60,17 @@ pub fn build(b: *std.Build) void {
     });
 
     //*******************************************************//
+    // driver/Hts221
+    //*******************************************************//
+    const Hts221 = b.addModule("Hts221", .{
+        .root_source_file = b.path("driver/Hts221.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+        .strip = false,
+    });
+
+    //*******************************************************//
     // example/blinky
     //*******************************************************//
     var blinky_root_module = b.createModule(.{
@@ -124,6 +135,26 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&i2c_bme280_polling_obj_install.step);
 
     //*******************************************************//
+    // example/usart/hello_stlink
+    //*******************************************************//
+    const usart_hello_stlink_root_module = b.createModule(.{
+        .root_source_file = b.path("./examples/usart/hello_stlink/startup.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+        .strip = false,
+    });
+    usart_hello_stlink_root_module.addImport("stm32u585xx", stm32u585xx);
+    const usart_hello_stlink_exe = b.addExecutable(.{
+        .name = "usart_hello_stlink.elf",
+        .root_module = usart_hello_stlink_root_module,
+    });
+    usart_hello_stlink_exe.entry = .{ .symbol_name = "Reset_Handler" };
+    usart_hello_stlink_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
+    b.default_step.dependOn(&usart_hello_stlink_exe.step);
+    b.installArtifact(usart_hello_stlink_exe);
+
+    //*******************************************************//
     // example/b-u585-iot02a/i2c/hts221_polling
     //*******************************************************//
     const b_u585_i2c_hts221_polling_root_module = b.createModule(.{
@@ -134,6 +165,7 @@ pub fn build(b: *std.Build) void {
         .strip = false,
     });
     b_u585_i2c_hts221_polling_root_module.addImport("stm32u585xx", stm32u585xx);
+    b_u585_i2c_hts221_polling_root_module.addImport("Hts221", Hts221);
     const b_u585_i2c_hts221_polling_exe = b.addExecutable(.{
         .name = "b_u585_i2c_hts221_polling.elf",
         .root_module = b_u585_i2c_hts221_polling_root_module,
@@ -142,4 +174,25 @@ pub fn build(b: *std.Build) void {
     b_u585_i2c_hts221_polling_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
     b.default_step.dependOn(&b_u585_i2c_hts221_polling_exe.step);
     b.installArtifact(b_u585_i2c_hts221_polling_exe);
+
+    //*******************************************************//
+    // example/b-u585-iot02a/i2c_usart/hts221_polling
+    //*******************************************************//
+    const b_u585_i2c_usart_hts221_polling_root_module = b.createModule(.{
+        .root_source_file = b.path("./examples/b-u585-iot02a/i2c_usart/hts221_polling/startup.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+        .strip = false,
+    });
+    b_u585_i2c_usart_hts221_polling_root_module.addImport("stm32u585xx", stm32u585xx);
+    b_u585_i2c_usart_hts221_polling_root_module.addImport("Hts221", Hts221);
+    const b_u585_i2c_usart_hts221_polling_exe = b.addExecutable(.{
+        .name = "b_u585_i2c_usart_hts221_polling.elf",
+        .root_module = b_u585_i2c_usart_hts221_polling_root_module,
+    });
+    b_u585_i2c_usart_hts221_polling_exe.entry = .{ .symbol_name = "Reset_Handler" };
+    b_u585_i2c_usart_hts221_polling_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
+    b.default_step.dependOn(&b_u585_i2c_usart_hts221_polling_exe.step);
+    b.installArtifact(b_u585_i2c_usart_hts221_polling_exe);
 }

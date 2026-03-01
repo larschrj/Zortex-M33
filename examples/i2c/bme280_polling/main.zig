@@ -4,7 +4,6 @@ export const rcc = @import("stm32u585xx").rcc;
 export const gpiob = @import("stm32u585xx").gpiob;
 export const gpioh = @import("stm32u585xx").gpioh;
 export const i2c1 = @import("stm32u585xx").i2c1;
-const I2c = @import("stm32u585xx").I2c;
 const Bme280 = @import("Bme280");
 
 fn bme280_read(register_address: u8, receive_buffer: []u8) void {
@@ -17,34 +16,36 @@ fn bme280_write(register_address: u8, transmit_buffer: []u8) void {
 
 var bme280: Bme280 = .{
     .addr = @intFromEnum(Bme280.I2c_addr.@"0x77"),
-    .bme280_read_func = bme280_read,
-    .bme280_write_func = bme280_write,
+    .read_func = bme280_read,
+    .write_func = bme280_write,
 };
+var ovr: [3]Bme280.Registers.Osrs = undefined;
+var filter: Bme280.Registers.Config.Filter = undefined;
+var mode: Bme280.Registers.Ctrl_meas.Mode = undefined;
+var status: Bme280.Registers.Status = undefined;
+var sensor: Bme280.Sensor = undefined;
 
 pub fn main() void {
     std.mem.doNotOptimizeAway(&bme280);
+    std.mem.doNotOptimizeAway(&mode);
+    std.mem.doNotOptimizeAway(&status);
+    std.mem.doNotOptimizeAway(&sensor);
     core_cm33.enableIrq();
     clockConfig();
     gpioConfig();
     i2c1Config();
     sysTickConfig();
 
+    bme280.softReset();
     bme280.readCalibration();
-    var mode = bme280.getMode();
+    ovr = bme280.setOversample(.oversample_16, .oversample_16, .oversample_16);
+    filter = bme280.setFilter(.@"4");
     mode = bme280.setMode(.normal);
+    status = bme280.getStatus();
 
-    var osrs_p: Bme280.Registers.Osrs = .oversample_1;
-    osrs_p = bme280.setPressOversample(osrs_p);
-
-    mode = bme280.setMode(.sleep);
-
-    const status = bme280.getStatus();
-    _ = status;
-
-    const raw = bme280.getSensorValues();
-    std.mem.doNotOptimizeAway(&raw);
-
-    while (true) {}
+    while (true) {
+        sensor = bme280.getSensor();
+    }
 }
 
 fn clockConfig() void {

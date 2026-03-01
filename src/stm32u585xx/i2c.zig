@@ -522,35 +522,37 @@ pub const I2c = packed struct {
     }
 
     pub fn readMultiplePolling(self: *volatile @This(), target_address: u10, register_address: u8, receive_buffer: []u8) void {
-        const cr2: Cr2 = .{
+        var cr2: Cr2 = .{
             .nbytes = 1,
             .sadd = target_address << 1,
             .rd_wrn = .request_write_transfer,
             .start = .start,
             .nack = .send_ack,
+            .autoend = .manual_end_mode,
         };
         self.cr2 = cr2;
         while (self.isr.txis != .transmit_empty_interrupt) {}
         self.txdr.txdata = register_address;
         while (self.isr.tc != .transfer_complete) {}
 
-        self.cr2 = .{
+        cr2 = .{
             .nbytes = @intCast(receive_buffer.len),
             .sadd = target_address << 1,
             .rd_wrn = .request_read_transfer,
             .start = .start,
+            .nack = .send_ack,
         };
+        self.cr2 = cr2;
         for (receive_buffer) |*item| {
             while (self.isr.rxne != .receive_not_empty) {}
             item.* = self.rxdr.rxdata;
         }
-        self.cr2.nack = .send_nack;
         self.cr2.stop = .stop;
     }
 
-    pub fn writeMultiplePolling(self: *volatile @This(), target_address: u10, register_address: u8, receive_buffer: []u8) void {
+    pub fn writeMultiplePolling(self: *volatile @This(), target_address: u10, register_address: u8, transmit_buffer: []u8) void {
         const cr2: Cr2 = .{
-            .nbytes = @intCast(1 + receive_buffer.len),
+            .nbytes = @intCast(1 + transmit_buffer.len),
             .sadd = target_address << 1,
             .rd_wrn = .request_write_transfer,
             .start = .start,
@@ -560,7 +562,7 @@ pub const I2c = packed struct {
         while (self.isr.txis != .transmit_empty_interrupt) {}
         self.txdr.txdata = register_address;
 
-        for (receive_buffer) |value| {
+        for (transmit_buffer) |value| {
             while (self.isr.txis != .transmit_empty_interrupt) {}
             self.txdr.txdata = value;
         }
