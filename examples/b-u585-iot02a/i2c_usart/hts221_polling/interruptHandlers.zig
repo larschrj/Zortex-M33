@@ -30,15 +30,15 @@ pub fn SysTick_Handler() callconv(.c) void {
 
     // Read humidity and temperature
     const sensor = main.hts221.getSensor();
-    std.mem.doNotOptimizeAway(sensor);
+    std.mem.doNotOptimizeAway(&sensor);
 
     // Convert sensor data to strings
 
     // Transmit sensor data
     main.usart1.transmitPolling("Temperature = ");
-    var tempString = [_]u8{' '} ** 12;
-    main.integerToString(&tempString, sensor.temperature);
-    main.usart1.transmitPolling(&tempString);
+    var buffer = [_]u8{' '} ** 14;
+    const number_string = main.q32p3ToString(&buffer, sensor.temperature) catch unreachable;
+    main.usart1.transmitPolling(number_string);
     main.usart1.transmitPolling("\r\n");
     main.usart1.transmitPolling("Humidity = \r\n");
 }

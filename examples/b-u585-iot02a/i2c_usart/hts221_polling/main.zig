@@ -176,24 +176,15 @@ fn usart1Config() void {
     usart1.cr1.ue = .enable;
 }
 
-pub fn integerToString(buf: *[12]u8, val: i32) void {
-    var temp = [_]u8{' '} ** buf.len;
-    const is_negative = val < 0;
-    var x = val;
-    var lastInd: usize = 0;
-    for (&temp, 0..) |*c, i| {
-        c.* = @as(u8, @intCast(@rem(x, 10))) + @as(u8, '0');
-        x = @divTrunc(x, 10);
-        if (x == 0) {
-            lastInd = i;
-            break;
-        }
-    }
+pub fn q32p3ToString(buf: *[14]u8, q32p3: i32) ![]u8 {
+    const is_negative = q32p3 < 0;
+    const abs_val: u32 = @intCast(if (is_negative) -q32p3 else q32p3);
+    const fraction = 125 * (abs_val & 0x7);
+    const integer = abs_val >> 3;
+
     if (is_negative) {
-        lastInd = lastInd + 1;
-        temp[lastInd] = '-';
-    }
-    for (0..(lastInd + 1)) |i| {
-        buf[i] = temp[lastInd - i];
+        return std.fmt.bufPrint(buf[0..], "-{d}.{d:0>3}", .{ integer, fraction });
+    } else {
+        return std.fmt.bufPrint(buf[0..], "{d}.{d:0>3}", .{ integer, fraction });
     }
 }
