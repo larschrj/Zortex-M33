@@ -214,13 +214,31 @@ pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
     };
     var buffer: [1]u8 = @bitCast(ctrl_reg1);
     self.write_func.?(@intFromPtr(&registers.ctrl_reg1), buffer[0..1]);
+
+    const ctrl_reg2: Registers.Ctrl_reg2 = .{
+        .oneshot = .waiting,
+        .heater = .disable,
+        .boot = .normal,
+    };
+    buffer = @bitCast(ctrl_reg2);
+    self.write_func.?(@intFromPtr(&registers.ctrl_reg2), buffer[0..1]);
+
+    const avconf: Registers.Av_conf = .{
+        .avgh = .@"8",
+        .avgt = .@"4",
+        ._reserved0 = 0,
+    };
+    buffer = @bitCast(avconf);
+    self.write_func.?(@intFromPtr(&registers.av_conf), buffer[0..1]);
+
     self.init = true;
 }
 
 pub fn getAdc(self: *Hts221) void {
     var buffer: [4]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.humidity_out) | 0x80, buffer[0..4]);
-    self.adc = @bitCast(buffer);
+    self.adc.h_out = @bitCast((@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]));
+    self.adc.t_out = @bitCast((@as(u16, buffer[3]) << 8) | @as(u16, buffer[2]));
 }
 
 // Temperature in degC

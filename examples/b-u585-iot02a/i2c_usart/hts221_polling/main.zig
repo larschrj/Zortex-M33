@@ -27,7 +27,7 @@ pub fn main() void {
     i2c2Config();
     usart1Config();
     sysTickConfig();
-    hts221.initSensor(.@"12.5Hz");
+    hts221.initSensor(.@"1Hz");
     usart1.transmitPolling("HTS221 initialised\r\n");
     core_cm33.enableIrq();
     while (true) {}
