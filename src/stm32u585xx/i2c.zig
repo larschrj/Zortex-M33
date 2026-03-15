@@ -478,96 +478,91 @@ pub const I2c = packed struct {
         };
     };
 
-    pub fn writePolling(self: *volatile @This(), target_address: u10, register_address: u8, transmit_value: u8) void {
-        const cr2: Cr2 = .{
-            .nbytes = 2,
-            .sadd = target_address << 1,
-            .rd_wrn = .request_write_transfer,
-            .start = .start,
-        };
-        self.cr2 = cr2;
-        while (self.isr.txis != .transmit_empty_interrupt) {}
-        self.txdr.txdata = register_address;
-        while (self.isr.txis != .transmit_empty_interrupt) {}
-        self.txdr.txdata = transmit_value;
-        while (self.isr.tc != .transfer_complete) {}
-        self.cr2.stop = .stop;
-    }
-
-    pub fn readPolling(self: *volatile @This(), target_address: u10, register_address: u8) u8 {
-        const cr2: Cr2 = .{
-            .nbytes = 1,
-            .sadd = target_address << 1,
-            .rd_wrn = .request_write_transfer,
-            .start = .start,
-            .nack = .send_ack,
-        };
-        self.cr2 = cr2;
-        while (self.isr.txis != .transmit_empty_interrupt) {}
-        self.txdr.txdata = register_address;
-        while (self.isr.tc != .transfer_complete) {}
-
-        self.cr2 = .{
-            .nbytes = 1,
-            .sadd = target_address << 1,
-            .rd_wrn = .request_read_transfer,
-            .start = .start,
-        };
-        while (self.isr.rxne != .receive_not_empty) {}
-        const rx = self.rxdr.rxdata;
-        self.cr2.nack = .send_nack;
-        self.cr2.stop = .stop;
-
-        return rx;
-    }
-
-    pub fn readMultiplePolling(self: *volatile @This(), target_address: u10, register_address: u8, receive_buffer: []u8) void {
+    pub fn readPolling(self: *volatile @This(), target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) void {
+        var remaining_bytes = receive_buffer.len;
+        const no_of_reloads = @divFloor(remaining_bytes, 255);
         var cr2: Cr2 = .{
-            .nbytes = 1,
-            .sadd = target_address << 1,
-            .rd_wrn = .request_write_transfer,
-            .start = .start,
-            .nack = .send_ack,
-            .autoend = .manual_end_mode,
-        };
-        self.cr2 = cr2;
-        while (self.isr.txis != .transmit_empty_interrupt) {}
-        self.txdr.txdata = register_address;
-        while (self.isr.tc != .transfer_complete) {}
-
-        cr2 = .{
-            .nbytes = @intCast(receive_buffer.len),
             .sadd = target_address << 1,
             .rd_wrn = .request_read_transfer,
-            .start = .start,
+            .start = if (start) .start else .no_start,
             .nack = .send_ack,
         };
-        self.cr2 = cr2;
-        for (receive_buffer) |*item| {
-            while (self.isr.rxne != .receive_not_empty) {}
-            item.* = self.rxdr.rxdata;
+
+        for (0..(no_of_reloads + 1)) |i| {
+            if (remaining_bytes > 255) {
+                cr2.nbytes = 255;
+                cr2.reload = .reload;
+            } else {
+                cr2.nbytes = @intCast(remaining_bytes);
+                cr2.reload = if (reload) .reload else .no_reload;
+            }
+
+            const start_ind = i * 256;
+            const end_ind = start_ind + cr2.nbytes;
+
+            self.cr2 = cr2;
+            for (receive_buffer[start_ind..end_ind]) |*value| {
+                while (self.isr.rxne != .receive_not_empty) {}
+                value.* = self.rxdr.rxdata;
+            }
+
+            if (cr2.reload == .reload) {
+                while (self.isr.tcr != .transfer_complete) {}
+            } else {
+                while (self.isr.tc != .transfer_complete) {}
+            }
+
+            remaining_bytes -= cr2.nbytes;
         }
-        self.cr2.stop = .stop;
+
+        if (stop) {
+            self.cr2.nack = .send_nack;
+            self.cr2.stop = .stop;
+            while (self.isr.stopf != .stop_detected) {}
+            self.icr.stopcf = .stop_detection_flag_clear;
+        }
     }
 
-    pub fn writeMultiplePolling(self: *volatile @This(), target_address: u10, register_address: u8, transmit_buffer: []u8) void {
-        const cr2: Cr2 = .{
-            .nbytes = @intCast(1 + transmit_buffer.len),
+    pub fn writePolling(self: *volatile @This(), target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) void {
+        var remaining_bytes = transmit_buffer.len;
+        const no_of_reloads = @divFloor(remaining_bytes, 255);
+        var cr2: Cr2 = .{
             .sadd = target_address << 1,
             .rd_wrn = .request_write_transfer,
-            .start = .start,
-            .nack = .send_ack,
+            .start = if (start) .start else .no_start,
         };
-        self.cr2 = cr2;
-        while (self.isr.txis != .transmit_empty_interrupt) {}
-        self.txdr.txdata = register_address;
 
-        for (transmit_buffer) |value| {
-            while (self.isr.txis != .transmit_empty_interrupt) {}
-            self.txdr.txdata = value;
+        for (0..(no_of_reloads + 1)) |i| {
+            if (remaining_bytes > 255) {
+                cr2.nbytes = 255;
+                cr2.reload = .reload;
+            } else {
+                cr2.nbytes = @intCast(remaining_bytes);
+                cr2.reload = if (reload) .reload else .no_reload;
+            }
+
+            const start_ind = i * 256;
+            const end_ind = start_ind + cr2.nbytes;
+
+            self.cr2 = cr2;
+            for (transmit_buffer[start_ind..end_ind]) |value| {
+                while (self.isr.txis != .transmit_empty_interrupt) {}
+                self.txdr.txdata = value;
+            }
+
+            if (cr2.reload == .reload) {
+                while (self.isr.tcr != .transfer_complete) {}
+            } else {
+                while (self.isr.tc != .transfer_complete) {}
+            }
+
+            remaining_bytes -= cr2.nbytes;
         }
 
-        while (self.isr.tc != .transfer_complete) {}
-        self.cr2.stop = .stop;
+        if (stop) {
+            self.cr2.stop = .stop;
+            while (self.isr.stopf != .stop_detected) {}
+            self.icr.stopcf = .stop_detection_flag_clear;
+        }
     }
 };

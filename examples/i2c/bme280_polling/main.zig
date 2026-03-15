@@ -7,11 +7,15 @@ export const i2c1 = @import("stm32u585xx").i2c1;
 const Bme280 = @import("Bme280");
 
 fn bme280_read(register_address: u8, receive_buffer: []u8) void {
-    i2c1.readMultiplePolling(bme280.addr.?, register_address, receive_buffer);
+    const register_buffer = [_]u8{register_address};
+    i2c1.writePolling(bme280.addr.?, &register_buffer, true, false, false);
+    i2c1.readPolling(bme280.addr.?, receive_buffer, true, true, false);
 }
 
 fn bme280_write(register_address: u8, transmit_buffer: []u8) void {
-    i2c1.writeMultiplePolling(bme280.addr.?, register_address, transmit_buffer);
+    const register_buffer = [_]u8{register_address};
+    i2c1.writePolling(bme280.addr.?, &register_buffer, true, false, true);
+    i2c1.writePolling(bme280.addr.?, transmit_buffer, false, true, false);
 }
 
 var bme280: Bme280 = .{
@@ -38,7 +42,7 @@ pub fn main() void {
 
     bme280.softReset();
     bme280.readCalibration();
-    ovr = bme280.setOversample(.oversample_16, .oversample_16, .oversample_16);
+    ovr = bme280.setOversample(.oversample_4, .oversample_4, .oversample_4);
     filter = bme280.setFilter(.@"4");
     mode = bme280.setMode(.normal);
     status = bme280.getStatus();
