@@ -41,11 +41,14 @@ pub fn main() void {
     sysTickConfig();
 
     bme280.softReset();
+    status = bme280.getStatus();
+    while (status.im_update != 0) {
+        status = bme280.getStatus();
+    }
     bme280.readCalibration();
     ovr = bme280.setOversample(.oversample_4, .oversample_4, .oversample_4);
     filter = bme280.setFilter(.@"4");
     mode = bme280.setMode(.normal);
-    status = bme280.getStatus();
 
     while (true) {
         sensor = bme280.getSensor();
