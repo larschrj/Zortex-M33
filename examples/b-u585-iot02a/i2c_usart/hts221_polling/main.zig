@@ -192,3 +192,16 @@ pub fn q32p3ToString(buf: *[14]u8, q32p3: i32) ![]u8 {
         return std.fmt.bufPrint(buf[0..], "{d}.{d:0>3}", .{ integer, fraction });
     }
 }
+
+pub fn q32p1ToString(buf: *[14]u8, q32p1: i32) ![]u8 {
+    const is_negative = q32p1 < 0;
+    const abs_val: u32 = @intCast(if (is_negative) -q32p1 else q32p1);
+    const fraction = 5 * (abs_val & 0x1);
+    const integer = abs_val >> 1;
+
+    if (is_negative) {
+        return std.fmt.bufPrint(buf[0..], "-{d}.{d:0>1}", .{ integer, fraction });
+    } else {
+        return std.fmt.bufPrint(buf[0..], "{d}.{d:0>1}", .{ integer, fraction });
+    }
+}

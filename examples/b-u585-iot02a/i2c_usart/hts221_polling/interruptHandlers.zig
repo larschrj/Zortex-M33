@@ -35,12 +35,15 @@ pub fn SysTick_Handler() callconv(.c) void {
     // Convert sensor data to strings
 
     // Transmit sensor data
-    main.usart1.transmitPolling("Temperature = ");
     var buffer = [_]u8{' '} ** 14;
-    const number_string = main.q32p3ToString(&buffer, sensor.temperature) catch unreachable;
-    main.usart1.transmitPolling(number_string);
+    const temp_string = main.q32p3ToString(&buffer, sensor.temperature) catch unreachable;
+    main.usart1.transmitPolling("Temperature = ");
+    main.usart1.transmitPolling(temp_string);
     main.usart1.transmitPolling("\r\n");
-    main.usart1.transmitPolling("Humidity = \r\n");
+    const hum_string = main.q32p1ToString(&buffer, sensor.humidity) catch unreachable;
+    main.usart1.transmitPolling("Humidity = ");
+    main.usart1.transmitPolling(hum_string);
+    main.usart1.transmitPolling("\r\n");
 }
 
 pub fn I2C2_EV_IRQHandler() callconv(.c) void {
