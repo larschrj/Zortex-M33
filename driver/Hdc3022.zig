@@ -36,7 +36,7 @@ pub fn softReset(self: *Hdc3022) void {
     self.write_func(self.addr, &reset);
 }
 
-pub fn setMeasurementMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode: LowPowerMode) void {
+pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode: LowPowerMode) void {
     const transmit_buffer: [2]u8 = switch (measurement_mode) {
         .single => switch (low_power_mode) {
             .low_power_mode_0 => .{ 0x24, 0x00 },
