@@ -71,6 +71,17 @@ pub fn build(b: *std.Build) void {
     });
 
     //*******************************************************//
+    // driver/Hdc3022
+    //*******************************************************//
+    const Hdc3022 = b.addModule("Hdc3022", .{
+        .root_source_file = b.path("./driver/Hdc3022.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+        .strip = false,
+    });
+
+    //*******************************************************//
     // example/blinky
     //*******************************************************//
     var blinky_root_module = b.createModule(.{
@@ -195,4 +206,25 @@ pub fn build(b: *std.Build) void {
     b_u585_i2c_usart_hts221_polling_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
     b.default_step.dependOn(&b_u585_i2c_usart_hts221_polling_exe.step);
     b.installArtifact(b_u585_i2c_usart_hts221_polling_exe);
+
+    //*******************************************************//
+    // example/i2c/hdc3022
+    //*******************************************************//
+    const i2c_hdc3022_root_module = b.createModule(.{
+        .root_source_file = b.path("./examples/i2c/hdc3022/startup.zig"),
+        .target = target,
+        .optimize = mode,
+        .unwind_tables = .none,
+        .strip = false,
+    });
+    i2c_hdc3022_root_module.addImport("stm32u585xx", stm32u585xx);
+    i2c_hdc3022_root_module.addImport("Hdc3022", Hdc3022);
+    const i2c_hdc3022_exe = b.addExecutable(.{
+        .name = "i2c_hdc3022.elf",
+        .root_module = i2c_hdc3022_root_module,
+    });
+    i2c_hdc3022_exe.entry = .{ .symbol_name = "Reset_Handler" };
+    i2c_hdc3022_exe.setLinkerScript(b.path("./src/stm32u585xx/stm32u585aiixq_flash.ld"));
+    b.default_step.dependOn(&i2c_hdc3022_exe.step);
+    b.installArtifact(i2c_hdc3022_exe);
 }

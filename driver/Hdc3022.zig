@@ -23,8 +23,30 @@ pub const LowPowerMode = enum {
     low_power_mode_3,
 };
 
-const ReadFunc = ?*const fn (addr: u8, receive_data: []u8) void;
-const WriteFunc = ?*const fn (addr: u8, transmit_data: []u8) void;
+pub const Status = packed struct(u16) {
+    checksum: u1 = 0,
+    _reserved0: u3 = 0,
+    reset: u1 = 1,
+    _reserved1: u1 = 0,
+    t_low_alert: u1 = 0,
+    t_high_alert: u1 = 0,
+    rh_low_alert: u1 = 0,
+    rh_high_alert: u1 = 0,
+    t_alert: u1 = 0,
+    rh_alert: u1 = 0,
+    _reserved2: u1 = 0,
+    heater_status: u1 = 0,
+    _reserved3: u1 = 0,
+    alert_status: u1 = 1,
+};
+
+pub const Adc = struct {
+    temp: u16,
+    humidity: u16,
+};
+
+const ReadFunc = ?*const fn (addr: u10, receive_data: []u8, start: bool, stop: bool, reload: bool) void;
+const WriteFunc = ?*const fn (addr: u10, transmit_data: []u8, start: bool, stop: bool, reload: bool) void;
 
 init: bool = false,
 addr: u8 = undefined,
@@ -37,7 +59,7 @@ pub fn softReset(self: *Hdc3022) void {
 }
 
 pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode: LowPowerMode) void {
-    const transmit_buffer: [2]u8 = switch (measurement_mode) {
+    var transmit_buffer: [2]u8 = switch (measurement_mode) {
         .single => switch (low_power_mode) {
             .low_power_mode_0 => .{ 0x24, 0x00 },
             .low_power_mode_1 => .{ 0x24, 0x0b },
@@ -76,5 +98,26 @@ pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode
         },
     };
 
-    self.write_func.?(self.addr, &transmit_buffer);
+    self.write_func.?(self.addr, &transmit_buffer, true, true, false);
+}
+
+pub fn getAdc(self: *Hdc3022) Adc {
+    const transmit_buffer = [_]u8{ 0xe0, 0x00 };
+    var receive_buffer: [6]u8 = undefined;
+    self.write_func.?(self.addr, &transmit_buffer, true, false, false);
+    self.read_func.?(self.addr, &receive_buffer, true, true, false);
+
+    var adc: Adc = undefined;
+    adc.temp = (@as(u16, receive_buffer[0]) << 8) | @as(u16, receive_buffer[1]);
+    adc.humidity = (@as(u16, receive_buffer[3]) << 8) | @as(u16, receive_buffer[4]);
+}
+
+pub fn getStatus(self: *Hdc3022) Status {
+    const transmit_buffer: [2]u8 = .{ 0xf3, 0x2d };
+    var receive_buffer: [3]u8 = undefined;
+    self.write_func.?(self.addr, &transmit_buffer, true, false, false);
+    self.read_func.?(self.addr, &receive_buffer, true, true, false);
+
+    const status: Status = @bitCast((@as(u16, receive_buffer[0]) << 8) | @as(u16, receive_buffer[1]));
+    return status;
 }
