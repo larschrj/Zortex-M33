@@ -45,8 +45,12 @@ pub const Adc = struct {
     humidity: u16,
 };
 
-const ReadFunc = ?*const fn (addr: u10, receive_data: []u8, start: bool, stop: bool, reload: bool) void;
-const WriteFunc = ?*const fn (addr: u10, transmit_data: []u8, start: bool, stop: bool, reload: bool) void;
+pub const Error = error{
+    MeasurementNotReady,
+};
+
+const ReadFunc = ?*const fn (addr: u10, receive_data: []u8, start: bool, stop: bool, reload: bool) Error!void;
+const WriteFunc = ?*const fn (addr: u10, transmit_data: []const u8, start: bool, stop: bool, reload: bool) Error!void;
 
 init: bool = false,
 addr: u8 = undefined,
@@ -98,18 +102,19 @@ pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode
         },
     };
 
-    self.write_func.?(self.addr, &transmit_buffer, true, true, false);
+    self.write_func.?(self.addr, &transmit_buffer, true, true, false) catch {};
 }
 
-pub fn getAdc(self: *Hdc3022) Adc {
+pub fn getAdc(self: *Hdc3022) Error!Adc {
     const transmit_buffer = [_]u8{ 0xe0, 0x00 };
     var receive_buffer: [6]u8 = undefined;
-    self.write_func.?(self.addr, &transmit_buffer, true, false, false);
-    self.read_func.?(self.addr, &receive_buffer, true, true, false);
+    try self.write_func.?(self.addr, &transmit_buffer, true, false, false);
+    try self.read_func.?(self.addr, &receive_buffer, true, true, false);
 
     var adc: Adc = undefined;
     adc.temp = (@as(u16, receive_buffer[0]) << 8) | @as(u16, receive_buffer[1]);
     adc.humidity = (@as(u16, receive_buffer[3]) << 8) | @as(u16, receive_buffer[4]);
+    return adc;
 }
 
 pub fn getStatus(self: *Hdc3022) Status {

@@ -8,14 +8,14 @@ const Bme280 = @import("Bme280");
 
 fn bme280_read(register_address: u8, receive_buffer: []u8) void {
     const register_buffer = [_]u8{register_address};
-    i2c1.writePolling(bme280.addr.?, &register_buffer, true, false, false);
-    i2c1.readPolling(bme280.addr.?, receive_buffer, true, true, false);
+    i2c1.writePolling(bme280.addr.?, &register_buffer, true, false, false) catch {};
+    i2c1.readPolling(bme280.addr.?, receive_buffer, true, true, false) catch {};
 }
 
 fn bme280_write(register_address: u8, transmit_buffer: []u8) void {
     const register_buffer = [_]u8{register_address};
-    i2c1.writePolling(bme280.addr.?, &register_buffer, true, false, true);
-    i2c1.writePolling(bme280.addr.?, transmit_buffer, false, true, false);
+    i2c1.writePolling(bme280.addr.?, &register_buffer, true, false, true) catch {};
+    i2c1.writePolling(bme280.addr.?, transmit_buffer, false, true, false) catch {};
 }
 
 var bme280: Bme280 = .{

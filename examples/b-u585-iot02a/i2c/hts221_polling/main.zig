@@ -14,14 +14,14 @@ var sensor: Hts221.Sensor = undefined;
 
 fn hts221Read(register_address: u8, receive_buffer: []u8) void {
     const register_buffer = [_]u8{register_address};
-    i2c2.writePolling(hts221.addr, &register_buffer, true, false, false);
-    i2c2.readPolling(hts221.addr, receive_buffer, true, true, false);
+    i2c2.writePolling(hts221.addr, &register_buffer, true, false, false) catch {};
+    i2c2.readPolling(hts221.addr, receive_buffer, true, true, false) catch {};
 }
 
 fn hts221Write(register_address: u8, transmit_buffer: []u8) void {
     const register_buffer = [_]u8{register_address};
-    i2c2.writePolling(hts221.addr, &register_buffer, true, false, true);
-    i2c2.writePolling(hts221.addr, transmit_buffer, false, true, false);
+    i2c2.writePolling(hts221.addr, &register_buffer, true, false, true) catch {};
+    i2c2.writePolling(hts221.addr, transmit_buffer, false, true, false) catch {};
 }
 
 pub fn main() void {

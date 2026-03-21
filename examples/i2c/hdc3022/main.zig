@@ -6,14 +6,23 @@ const gpiob = @import("stm32u585xx").gpiob;
 const gpioh = @import("stm32u585xx").gpioh;
 const i2c1 = @import("stm32u585xx").i2c1;
 const usart1 = @import("stm32u585xx").usart1;
+const I2c = @import("stm32u585xx").I2c;
 const Hdc3022 = @import("Hdc3022");
 
-fn hdc3022Read(target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) void {
-    i2c1.readPolling(target_address, receive_buffer, start, stop, reload);
+fn hdc3022Read(target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) Hdc3022.Error!void {
+    i2c1.readPolling(target_address, receive_buffer, start, stop, reload) catch |e| {
+        if (e == I2c.I2cError.NotAcknowledge) {
+            return Hdc3022.Error.MeasurementNotReady;
+        }
+    };
 }
 
-fn hdc3022Write(target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) void {
-    i2c1.writePolling(target_address, transmit_buffer, start, stop, reload);
+fn hdc3022Write(target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) Hdc3022.Error!void {
+    i2c1.writePolling(target_address, transmit_buffer, start, stop, reload) catch |e| {
+        if (e == I2c.I2cError.NotAcknowledge) {
+            return Hdc3022.Error.MeasurementNotReady;
+        }
+    };
 }
 
 pub fn main() noreturn {
@@ -27,10 +36,13 @@ pub fn main() noreturn {
         .read_func = &hdc3022Read,
         .write_func = &hdc3022Write,
     };
+    var adc: Hdc3022.Adc = undefined;
 
     hdc3022.setMode(.auto_10Hz, .low_power_mode_0);
 
-    while (true) {}
+    while (true) {
+        adc = hdc3022.getAdc() catch Hdc3022.Adc{ .temp = 0xffff, .humidity = 0xffff };
+    }
 }
 
 pub fn clockConfig() void {

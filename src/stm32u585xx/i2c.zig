@@ -478,7 +478,26 @@ pub const I2c = packed struct {
         };
     };
 
-    pub fn readPolling(self: *volatile @This(), target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) void {
+    pub const I2cError = error{
+        NotAcknowledge,
+        BusError,
+        ArbitrationLost,
+    };
+
+    pub fn readErrors(self: *volatile @This()) I2cError!void {
+        if (self.isr.nackf == .nack_received) {
+            self.icr.nackcf = .not_acknowledge_flag_clear;
+            return I2cError.NotAcknowledge;
+        } else if (self.isr.berr == .bus_error) {
+            self.icr.berrcf = .bus_error_flag_clear;
+            return I2cError.BusError;
+        } else if (self.isr.arlo == .arbitration_lost) {
+            self.icr.arlocf = .arbitration_lost_flag_clear;
+            return I2cError.ArbitrationLost;
+        }
+    }
+
+    pub fn readPolling(self: *volatile @This(), target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) !void {
         var remaining_bytes = receive_buffer.len;
         const no_of_reloads = @divFloor(remaining_bytes, 255);
         var cr2: Cr2 = .{
@@ -502,14 +521,20 @@ pub const I2c = packed struct {
 
             self.cr2 = cr2;
             for (receive_buffer[start_ind..end_ind]) |*value| {
-                while (self.isr.rxne != .receive_not_empty) {}
+                while (self.isr.rxne != .receive_not_empty) {
+                    try readErrors(self);
+                }
                 value.* = self.rxdr.rxdata;
             }
 
             if (cr2.reload == .reload) {
-                while (self.isr.tcr != .transfer_complete) {}
+                while (self.isr.tcr != .transfer_complete) {
+                    try readErrors(self);
+                }
             } else {
-                while (self.isr.tc != .transfer_complete) {}
+                while (self.isr.tc != .transfer_complete) {
+                    try readErrors(self);
+                }
             }
 
             remaining_bytes -= cr2.nbytes;
@@ -523,7 +548,7 @@ pub const I2c = packed struct {
         }
     }
 
-    pub fn writePolling(self: *volatile @This(), target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) void {
+    pub fn writePolling(self: *volatile @This(), target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) !void {
         var remaining_bytes = transmit_buffer.len;
         const no_of_reloads = @divFloor(remaining_bytes, 255);
         var cr2: Cr2 = .{
@@ -546,14 +571,20 @@ pub const I2c = packed struct {
 
             self.cr2 = cr2;
             for (transmit_buffer[start_ind..end_ind]) |value| {
-                while (self.isr.txis != .transmit_empty_interrupt) {}
+                while (self.isr.txis != .transmit_empty_interrupt) {
+                    try readErrors(self);
+                }
                 self.txdr.txdata = value;
             }
 
             if (cr2.reload == .reload) {
-                while (self.isr.tcr != .transfer_complete) {}
+                while (self.isr.tcr != .transfer_complete) {
+                    try readErrors(self);
+                }
             } else {
-                while (self.isr.tc != .transfer_complete) {}
+                while (self.isr.tc != .transfer_complete) {
+                    try readErrors(self);
+                }
             }
 
             remaining_bytes -= cr2.nbytes;
