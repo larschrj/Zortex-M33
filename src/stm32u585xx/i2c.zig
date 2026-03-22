@@ -479,25 +479,29 @@ pub const I2c = packed struct {
     };
 
     pub const I2cError = error{
-        NotAcknowledge,
+        Busy,
         BusError,
         ArbitrationLost,
+        NotAcknowledge,
     };
 
     pub fn readErrors(self: *volatile @This()) I2cError!void {
-        if (self.isr.nackf == .nack_received) {
-            self.icr.nackcf = .not_acknowledge_flag_clear;
-            return I2cError.NotAcknowledge;
+        if (self.isr.busy == .bus_busy) {
+            return I2cError.Busy;
         } else if (self.isr.berr == .bus_error) {
             self.icr.berrcf = .bus_error_flag_clear;
             return I2cError.BusError;
         } else if (self.isr.arlo == .arbitration_lost) {
             self.icr.arlocf = .arbitration_lost_flag_clear;
             return I2cError.ArbitrationLost;
+        } else if (self.isr.nackf == .nack_received) {
+            self.icr.nackcf = .not_acknowledge_flag_clear;
+            return I2cError.NotAcknowledge;
         }
     }
 
     pub fn readPolling(self: *volatile @This(), target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) !void {
+        try readErrors(self);
         var remaining_bytes = receive_buffer.len;
         const no_of_reloads = @divFloor(remaining_bytes, 255);
         var cr2: Cr2 = .{
@@ -508,6 +512,7 @@ pub const I2c = packed struct {
         };
 
         for (0..(no_of_reloads + 1)) |i| {
+            try readErrors(self);
             if (remaining_bytes > 255) {
                 cr2.nbytes = 255;
                 cr2.reload = .reload;
@@ -520,6 +525,7 @@ pub const I2c = packed struct {
             const end_ind = start_ind + cr2.nbytes;
 
             self.cr2 = cr2;
+            try readErrors(self);
             for (receive_buffer[start_ind..end_ind]) |*value| {
                 while (self.isr.rxne != .receive_not_empty) {
                     try readErrors(self);
@@ -543,12 +549,15 @@ pub const I2c = packed struct {
         if (stop) {
             self.cr2.nack = .send_nack;
             self.cr2.stop = .stop;
-            while (self.isr.stopf != .stop_detected) {}
+            while (self.isr.stopf != .stop_detected) {
+                try readErrors(self);
+            }
             self.icr.stopcf = .stop_detection_flag_clear;
         }
     }
 
     pub fn writePolling(self: *volatile @This(), target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) !void {
+        try readErrors(self);
         var remaining_bytes = transmit_buffer.len;
         const no_of_reloads = @divFloor(remaining_bytes, 255);
         var cr2: Cr2 = .{
@@ -558,6 +567,7 @@ pub const I2c = packed struct {
         };
 
         for (0..(no_of_reloads + 1)) |i| {
+            try readErrors(self);
             if (remaining_bytes > 255) {
                 cr2.nbytes = 255;
                 cr2.reload = .reload;
@@ -570,6 +580,7 @@ pub const I2c = packed struct {
             const end_ind = start_ind + cr2.nbytes;
 
             self.cr2 = cr2;
+            try readErrors(self);
             for (transmit_buffer[start_ind..end_ind]) |value| {
                 while (self.isr.txis != .transmit_empty_interrupt) {
                     try readErrors(self);
@@ -592,7 +603,9 @@ pub const I2c = packed struct {
 
         if (stop) {
             self.cr2.stop = .stop;
-            while (self.isr.stopf != .stop_detected) {}
+            while (self.isr.stopf != .stop_detected) {
+                try readErrors(self);
+            }
             self.icr.stopcf = .stop_detection_flag_clear;
         }
     }
