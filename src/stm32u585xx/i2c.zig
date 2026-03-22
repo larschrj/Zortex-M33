@@ -486,9 +486,7 @@ pub const I2c = packed struct {
     };
 
     pub fn readErrors(self: *volatile @This()) I2cError!void {
-        if (self.isr.busy == .bus_busy) {
-            return I2cError.Busy;
-        } else if (self.isr.berr == .bus_error) {
+        if (self.isr.berr == .bus_error) {
             self.icr.berrcf = .bus_error_flag_clear;
             return I2cError.BusError;
         } else if (self.isr.arlo == .arbitration_lost) {
