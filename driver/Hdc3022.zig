@@ -45,6 +45,13 @@ pub const Adc = struct {
     humidity: u16,
 };
 
+// Temperature in degC in Q25.7 signed fixed point format
+// Relative humidity in % in UQ16.16 unsigned fixed point format
+pub const Sensor = struct {
+    temp: i32,
+    humidity: u32,
+};
+
 pub const Error = error{
     MeasurementNotReady,
 };
@@ -125,4 +132,14 @@ pub fn getStatus(self: *Hdc3022) Status {
 
     const status: Status = @bitCast((@as(u16, receive_buffer[0]) << 8) | @as(u16, receive_buffer[1]));
     return status;
+}
+
+// Get temperature and relative humidity reading
+// Temperature in degC in Q25.7 signed fixed point format
+pub fn getSensor(self: *Hdc3022) Error!Sensor {
+    const adc = try getAdc(self);
+    var sensor: Sensor = undefined;
+
+    sensor.temp = @divFloor(175 * (@as(i32, adc.temp) << 7), 65535) - 5760;
+    sensor.humidity = @divFloor(100 * (@as(u32, adc.humidity) << 8), 65535);
 }
