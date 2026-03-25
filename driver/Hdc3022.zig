@@ -142,4 +142,5 @@ pub fn getSensor(self: *Hdc3022) Error!Sensor {
 
     sensor.temp = @divFloor(175 * (@as(i32, adc.temp) << 7), 65535) - 5760;
     sensor.humidity = @divFloor(100 * (@as(u32, adc.humidity) << 8), 65535);
+    return sensor;
 }

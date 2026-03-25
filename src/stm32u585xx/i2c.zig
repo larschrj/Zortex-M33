@@ -478,23 +478,23 @@ pub const I2c = packed struct {
         };
     };
 
-    pub const I2cError = error{
+    pub const Error = error{
         Busy,
         BusError,
         ArbitrationLost,
         NotAcknowledge,
     };
 
-    pub fn readErrors(self: *volatile @This()) I2cError!void {
+    pub fn readErrors(self: *volatile @This()) Error!void {
         if (self.isr.berr == .bus_error) {
             self.icr.berrcf = .bus_error_flag_clear;
-            return I2cError.BusError;
+            return Error.BusError;
         } else if (self.isr.arlo == .arbitration_lost) {
             self.icr.arlocf = .arbitration_lost_flag_clear;
-            return I2cError.ArbitrationLost;
+            return Error.ArbitrationLost;
         } else if (self.isr.nackf == .nack_received) {
             self.icr.nackcf = .not_acknowledge_flag_clear;
-            return I2cError.NotAcknowledge;
+            return Error.NotAcknowledge;
         }
     }
 
