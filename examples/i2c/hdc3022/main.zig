@@ -10,19 +10,11 @@ const I2c = @import("stm32u585xx").I2c;
 const Hdc3022 = @import("Hdc3022");
 
 fn hdc3022Read(target_address: u10, receive_buffer: []u8, start: bool, stop: bool, reload: bool) Hdc3022.Error!void {
-    i2c1.readPolling(target_address, receive_buffer, start, stop, reload) catch |e| {
-        if (e == I2c.Error.NotAcknowledge) {
-            return Hdc3022.Error.MeasurementNotReady;
-        }
-    };
+    try i2c1.readPolling(target_address, receive_buffer, start, stop, reload);
 }
 
 fn hdc3022Write(target_address: u10, transmit_buffer: []const u8, start: bool, stop: bool, reload: bool) Hdc3022.Error!void {
-    i2c1.writePolling(target_address, transmit_buffer, start, stop, reload) catch |e| {
-        if (e == I2c.Error.NotAcknowledge) {
-            return Hdc3022.Error.MeasurementNotReady;
-        }
-    };
+    try i2c1.writePolling(target_address, transmit_buffer, start, stop, reload);
 }
 
 pub fn main() noreturn {
@@ -38,7 +30,7 @@ pub fn main() noreturn {
     };
     var sensor: Hdc3022.Sensor = undefined;
 
-    hdc3022.setMode(.auto_10Hz, .low_power_mode_0);
+    hdc3022.setMode(.auto_10Hz, .low_power_mode_0) catch unreachable;
 
     while (true) {
         sensor = hdc3022.getSensor() catch Hdc3022.Sensor{ .temp = @bitCast(@as(u32, 0xffffffff)), .humidity = 0xffffffff };
