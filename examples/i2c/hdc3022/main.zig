@@ -29,9 +29,9 @@ pub fn main() noreturn {
         .write_func = &hdc3022Write,
     };
     var sensor: Hdc3022.Sensor = undefined;
-
     hdc3022.setMode(.auto_10Hz, .low_power_mode_0) catch unreachable;
 
+    systickConfig();
     while (true) {
         sensor = hdc3022.getSensor() catch Hdc3022.Sensor{ .temp = @bitCast(@as(u32, 0xffffffff)), .humidity = 0xffffffff };
     }
