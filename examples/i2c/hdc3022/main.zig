@@ -32,9 +32,7 @@ pub fn main() noreturn {
     usart1Config();
     hdc3022.setMode(.auto_10Hz, .low_power_mode_0) catch unreachable;
     systickConfig();
-    while (true) {
-        sensor = hdc3022.getSensor() catch Hdc3022.Sensor{ .temp = @bitCast(@as(u32, 0xffffffff)), .humidity = 0xffffffff };
-    }
+    while (true) {}
 }
 
 pub fn clockConfig() void {
