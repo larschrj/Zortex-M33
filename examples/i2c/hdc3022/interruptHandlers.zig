@@ -1,3 +1,5 @@
+const std = @import("std");
+const main = @import("main.zig");
 const gpioh = @import("stm32u585xx").gpioh;
 const i2c2 = @import("stm32u585xx").i2c2;
 
@@ -25,6 +27,16 @@ pub fn SysTick_Handler() callconv(.c) void {
     // toggle user leds
     gpioh.odr.p6 ^= 0b1;
     gpioh.odr.p7 ^= 0b1;
+
+    // Transmit temperature on usart1 if available
+    const sensor = main.hdc3022.getSensor();
+    if (sensor) |s| {
+        var buffer = [_]u8{' '} ** 14;
+        const temp_string = main.q32p7ToString(&buffer, s.temp) catch unreachable;
+        main.usart1.transmitPolling("Temperature = ");
+        main.usart1.transmitPolling(temp_string);
+        main.usart1.transmitPolling("\r\n");
+    } else |_| {}
 }
 
 pub fn I2C2_EV_IRQHandler() callconv(.c) void {

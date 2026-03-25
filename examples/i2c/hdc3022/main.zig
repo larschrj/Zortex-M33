@@ -5,7 +5,7 @@ const gpioa = @import("stm32u585xx").gpioa;
 const gpiob = @import("stm32u585xx").gpiob;
 const gpioh = @import("stm32u585xx").gpioh;
 const i2c1 = @import("stm32u585xx").i2c1;
-const usart1 = @import("stm32u585xx").usart1;
+pub const usart1 = @import("stm32u585xx").usart1;
 const I2c = @import("stm32u585xx").I2c;
 const Hdc3022 = @import("Hdc3022");
 
@@ -17,20 +17,20 @@ fn hdc3022Write(target_address: u10, transmit_buffer: []const u8, start: bool, s
     try i2c1.writePolling(target_address, transmit_buffer, start, stop, reload);
 }
 
+pub var hdc3022: Hdc3022 = .{
+    .addr = 0x44,
+    .read_func = &hdc3022Read,
+    .write_func = &hdc3022Write,
+};
+
+pub var sensor: Hdc3022.Sensor = undefined;
+
 pub fn main() noreturn {
     clockConfig();
     gpioConfig();
     i2c1Config();
     usart1Config();
-
-    var hdc3022: Hdc3022 = .{
-        .addr = 0x44,
-        .read_func = &hdc3022Read,
-        .write_func = &hdc3022Write,
-    };
-    var sensor: Hdc3022.Sensor = undefined;
     hdc3022.setMode(.auto_10Hz, .low_power_mode_0) catch unreachable;
-
     systickConfig();
     while (true) {
         sensor = hdc3022.getSensor() catch Hdc3022.Sensor{ .temp = @bitCast(@as(u32, 0xffffffff)), .humidity = 0xffffffff };
@@ -178,4 +178,23 @@ fn usart1Config() void {
     // Enable usart1
     usart1.cr1.ue = .enable;
     while (usart1.cr1.ue != .enable) {}
+}
+
+pub fn q32p7ToString(buf: *[14]u8, q32p7: i32) ![]u8 {
+    const is_negative = q32p7 < 0;
+    const abs_val: u32 = @intCast(if (is_negative) -q32p7 else q32p7);
+    const fraction = 78125 * (abs_val & 0x7f);
+    const integer = abs_val >> 7;
+
+    if (is_negative) {
+        return std.fmt.bufPrint(buf[0..], "-{d}.{d:0>7}", .{ integer, fraction });
+    } else {
+        return std.fmt.bufPrint(buf[0..], "{d}.{d:0>7}", .{ integer, fraction });
+    }
+}
+
+pub fn uq32p8ToString(buf: *[14]u8, uq32p8: u32) ![]u8 {
+    const fraction = 390625 * (uq32p8 & 0xff);
+    const integer = uq32p8 >> 8;
+    return std.fmt.bufPrint(buf[0..], "{d}.{d:0>8}", .{ integer, fraction });
 }
