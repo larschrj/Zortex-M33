@@ -10,7 +10,7 @@ pub const I2c = packed struct {
     pecr: Pecr, // I2C PEC register, Address offset: 0x20
     rxdr: Rxdr, // I2C Receive data register, Address offset: 0x24
     txdr: Txdr, // I2C Transmit data register, Address offset: 0x28
-    autocr: Autocr,
+    autocr: Autocr, // Autonomous mode control register, Address offset: 0x2c
 
     const Cr1 = packed struct(u32) {
         pe: Pe, // Peripheral mode

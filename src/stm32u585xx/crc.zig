@@ -1,9 +1,9 @@
 pub const Crc = packed struct {
-    dr: u32 = 0xffffffff,
-    idr: u32 = 0,
-    cr: Cr = 0,
-    init: u32 = 0xffffffff,
-    pol: u32 = 0b00000100110000010001110110110111,
+    dr: u32 = 0xffffffff, // Data, Address offset: 0x00
+    idr: u32 = 0, // Independent data, Address offset: 0x04
+    cr: Cr = 0, // Control, Address offset: 0x08
+    init: u32 = 0xffffffff, // Initial value, Address offset: 0x10
+    pol: u32 = 0b00000100110000010001110110110111, // Polynomial, Address offset: 0x14
 
     pub const Cr = packed struct(u32) {
         reset: Reset,
