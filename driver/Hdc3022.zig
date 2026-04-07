@@ -67,6 +67,8 @@ init: bool = false,
 addr: u8 = undefined,
 read_func: ReadFunc = null,
 write_func: WriteFunc = null,
+measurement_mode: MeasurementMode = undefined,
+low_power_mode: LowPowerMode = undefined,
 
 // Get NIST ID
 pub fn getId(self: *Hdc3022) [6]u8 {
@@ -103,6 +105,8 @@ pub fn softReset(self: *Hdc3022) void {
 
 // Set measurement mode
 pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode: LowPowerMode) Error!void {
+    self.measurement_mode = measurement_mode;
+    self.low_power_mode = low_power_mode;
     var transmit_buffer: [2]u8 = switch (measurement_mode) {
         .single => switch (low_power_mode) {
             .low_power_mode_0 => .{ 0x24, 0x00 },
@@ -147,7 +151,10 @@ pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode
 
 // Get sensor ADC values
 pub fn getAdc(self: *Hdc3022) Error!Adc {
-    const transmit_buffer = [_]u8{ 0xe0, 0x00 };
+    const transmit_buffer: [2]u8 = switch (self.measurement_mode) {
+        .single => .{ 0x24, 0x00 },
+        else => .{ 0xe0, 0x00 },
+    };
     var receive_buffer: [6]u8 = undefined;
     try self.write_func.?(self.addr, &transmit_buffer, true, false, false);
     self.read_func.?(self.addr, &receive_buffer, true, true, false) catch |e| {
