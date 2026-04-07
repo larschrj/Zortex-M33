@@ -1,4 +1,4 @@
-const registers: *align(1) volatile Registers = @ptrFromInt(0x0f);
+const registers: *align(1) Registers = @ptrFromInt(0x0f);
 
 const Hts221 = @This();
 
@@ -192,13 +192,13 @@ pub fn readCalibration(self: *Hts221) void {
     // T1/T0 msb -> h0_t0_out
     self.read_func.?(@intFromPtr(&registers.calib.t1t0_msb) | 0x80, buffer[0..3]);
     self.calib.t1t0_msb = @bitCast(buffer[0]);
-    self.calib.h0_t0_out = (@as(i16, buffer[2]) << 8) | @as(i16, buffer[1]);
+    self.calib.h0_t0_out = @bitCast((@as(u16, buffer[2]) << 8) | @as(u16, buffer[1]));
 
     // h1_t0_out -> t1_out
     self.read_func.?(@intFromPtr(&registers.calib.h1_t0_out) | 0x80, buffer[0..6]);
-    self.calib.h1_t0_out = (@as(i16, buffer[1]) << 8) | @as(i16, buffer[0]);
-    self.calib.t0_out = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
-    self.calib.t1_out = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
+    self.calib.h1_t0_out = @bitCast((@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]));
+    self.calib.t0_out = @bitCast((@as(u16, buffer[3]) << 8) | @as(u16, buffer[2]));
+    self.calib.t1_out = @bitCast((@as(u16, buffer[5]) << 8) | @as(u16, buffer[4]));
 
     //
     self.t0_degC_x8 = @bitCast(@as(u32, self.calib.t0_degC_x8) | (@as(u32, self.calib.t1t0_msb.t0_msb) << 8));
@@ -214,13 +214,31 @@ pub fn initSensor(self: *Hts221, data_rate: Registers.Ctrl_reg1.Odr) void {
     };
     var buffer: [1]u8 = @bitCast(ctrl_reg1);
     self.write_func.?(@intFromPtr(&registers.ctrl_reg1), buffer[0..1]);
+
+    const ctrl_reg2: Registers.Ctrl_reg2 = .{
+        .oneshot = .waiting,
+        .heater = .disable,
+        .boot = .normal,
+    };
+    buffer = @bitCast(ctrl_reg2);
+    self.write_func.?(@intFromPtr(&registers.ctrl_reg2), buffer[0..1]);
+
+    const avconf: Registers.Av_conf = .{
+        .avgh = .@"8",
+        .avgt = .@"4",
+        ._reserved0 = 0,
+    };
+    buffer = @bitCast(avconf);
+    self.write_func.?(@intFromPtr(&registers.av_conf), buffer[0..1]);
+
     self.init = true;
 }
 
 pub fn getAdc(self: *Hts221) void {
     var buffer: [4]u8 = undefined;
     self.read_func.?(@intFromPtr(&registers.humidity_out) | 0x80, buffer[0..4]);
-    self.adc = @bitCast(buffer);
+    self.adc.h_out = @bitCast((@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]));
+    self.adc.t_out = @bitCast((@as(u16, buffer[3]) << 8) | @as(u16, buffer[2]));
 }
 
 // Temperature in degC
@@ -279,6 +297,9 @@ pub fn getSensor(self: *Hts221) Sensor {
 test "HTS221 last register address" {
     const std = @import("std");
 
-    std.debug.print("@offsetOf(Registers, \"calib\") = {x}\n", .{@offsetOf(Registers, "calib")});
+    std.debug.print("@offsetOf(Registers, \"calib\") = 0x{x}\n", .{@offsetOf(Registers, "calib")});
     try std.testing.expect(@offsetOf(Registers, "calib") == 0x21);
+
+    std.debug.print("@offsetOf(Calib, \"t1t0_msb\") = 0x{x}\n", .{@offsetOf(Registers.Calib, "t1t0_msb")});
+    try std.testing.expect(@offsetOf(Registers.Calib, "t1t0_msb") == 0x5);
 }

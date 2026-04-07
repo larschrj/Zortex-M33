@@ -1,7 +1,7 @@
 const std = @import("std");
+const main = @import("main.zig");
 const gpioh = @import("stm32u585xx").gpioh;
 const i2c2 = @import("stm32u585xx").i2c2;
-const main = @import("main.zig");
 
 // SVC handler has to be split into an assembly only part and zig part
 // Any non assembly code in SVC_Handler will typically cause the stack pointer
@@ -28,22 +28,15 @@ pub fn SysTick_Handler() callconv(.c) void {
     gpioh.odr.p6 ^= 0b1;
     gpioh.odr.p7 ^= 0b1;
 
-    // Read humidity and temperature
-    const sensor = main.hts221.getSensor();
-    std.mem.doNotOptimizeAway(&sensor);
-
-    // Convert sensor data to strings
-
-    // Transmit sensor data
-    var buffer = [_]u8{' '} ** 14;
-    const temp_string = main.q32p3ToString(&buffer, sensor.temperature) catch unreachable;
-    main.usart1.transmitPolling("Temperature = ");
-    main.usart1.transmitPolling(temp_string);
-    main.usart1.transmitPolling("\r\n");
-    const hum_string = main.q32p1ToString(&buffer, sensor.humidity) catch unreachable;
-    main.usart1.transmitPolling("Humidity = ");
-    main.usart1.transmitPolling(hum_string);
-    main.usart1.transmitPolling("\r\n");
+    // Transmit temperature on usart1 if available
+    const sensor = main.hdc3022.getSensor();
+    if (sensor) |s| {
+        var buffer = [_]u8{' '} ** 14;
+        const temp_string = main.q32p7ToString(&buffer, s.temp) catch unreachable;
+        main.usart1.transmitPolling("Temperature = ");
+        main.usart1.transmitPolling(temp_string);
+        main.usart1.transmitPolling("\r\n");
+    } else |_| {}
 }
 
 pub fn I2C2_EV_IRQHandler() callconv(.c) void {

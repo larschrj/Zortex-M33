@@ -14,11 +14,15 @@ pub var hts221: Hts221 = .{
 };
 
 fn hts221Read(register_address: u8, receive_buffer: []u8) void {
-    i2c2.readMultiplePolling(hts221.addr, register_address, receive_buffer);
+    const register_buffer = [_]u8{register_address};
+    i2c2.writePolling(hts221.addr, &register_buffer, true, false, false) catch {};
+    i2c2.readPolling(hts221.addr, receive_buffer, true, true, false) catch {};
 }
 
-fn hts221Write(register_address: u8, receive_buffer: []u8) void {
-    i2c2.writeMultiplePolling(hts221.addr, register_address, receive_buffer);
+fn hts221Write(register_address: u8, transmit_buffer: []u8) void {
+    const register_buffer = [_]u8{register_address};
+    i2c2.writePolling(hts221.addr, &register_buffer, true, false, true) catch {};
+    i2c2.writePolling(hts221.addr, transmit_buffer, false, true, false) catch {};
 }
 
 pub fn main() void {
@@ -27,7 +31,7 @@ pub fn main() void {
     i2c2Config();
     usart1Config();
     sysTickConfig();
-    hts221.initSensor(.@"12.5Hz");
+    hts221.initSensor(.@"1Hz");
     usart1.transmitPolling("HTS221 initialised\r\n");
     core_cm33.enableIrq();
     while (true) {}
@@ -176,24 +180,28 @@ fn usart1Config() void {
     usart1.cr1.ue = .enable;
 }
 
-pub fn integerToString(buf: *[12]u8, val: i32) void {
-    var temp = [_]u8{' '} ** buf.len;
-    const is_negative = val < 0;
-    var x = val;
-    var lastInd: usize = 0;
-    for (&temp, 0..) |*c, i| {
-        c.* = @as(u8, @intCast(@rem(x, 10))) + @as(u8, '0');
-        x = @divTrunc(x, 10);
-        if (x == 0) {
-            lastInd = i;
-            break;
-        }
-    }
+pub fn q32p3ToString(buf: *[14]u8, q32p3: i32) ![]u8 {
+    const is_negative = q32p3 < 0;
+    const abs_val: u32 = @intCast(if (is_negative) -q32p3 else q32p3);
+    const fraction = 125 * (abs_val & 0x7);
+    const integer = abs_val >> 3;
+
     if (is_negative) {
-        lastInd = lastInd + 1;
-        temp[lastInd] = '-';
+        return std.fmt.bufPrint(buf[0..], "-{d}.{d:0>3}", .{ integer, fraction });
+    } else {
+        return std.fmt.bufPrint(buf[0..], "{d}.{d:0>3}", .{ integer, fraction });
     }
-    for (0..(lastInd + 1)) |i| {
-        buf[i] = temp[lastInd - i];
+}
+
+pub fn q32p1ToString(buf: *[14]u8, q32p1: i32) ![]u8 {
+    const is_negative = q32p1 < 0;
+    const abs_val: u32 = @intCast(if (is_negative) -q32p1 else q32p1);
+    const fraction = 5 * (abs_val & 0x1);
+    const integer = abs_val >> 1;
+
+    if (is_negative) {
+        return std.fmt.bufPrint(buf[0..], "-{d}.{d:0>1}", .{ integer, fraction });
+    } else {
+        return std.fmt.bufPrint(buf[0..], "{d}.{d:0>1}", .{ integer, fraction });
     }
 }

@@ -187,13 +187,13 @@ pub const I2c_addr = enum(u8) {
     @"0x77" = 0x77,
 };
 
-const Bme280ReadFunc = ?*const fn (register_address: u8, register_data: []u8) void;
+const ReadFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 
-const Bme280WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
+const WriteFunc = ?*const fn (register_address: u8, register_data: []u8) void;
 
 addr: ?u8 = null,
-read_func: Bme280ReadFunc = null,
-write_func: Bme280WriteFunc = null,
+read_func: ReadFunc = null,
+write_func: WriteFunc = null,
 calibration: Calibration = .{},
 adc: Adc = .{},
 temp_fine: i32 = 0,
@@ -205,17 +205,17 @@ pub fn readCalibration(self: *Bme280) void {
     reg_addr = @intFromPtr(&registers.dig_T1);
     self.read_func.?(reg_addr, buffer[0..24]);
     self.calibration.dig_T1 = (@as(u16, buffer[1]) << 8) | @as(u16, buffer[0]);
-    self.calibration.dig_T2 = (@as(i16, buffer[3]) << 8) | @as(i16, buffer[2]);
-    self.calibration.dig_T3 = (@as(i16, buffer[5]) << 8) | @as(i16, buffer[4]);
+    self.calibration.dig_T2 = @bitCast((@as(u16, buffer[3]) << 8) | @as(u16, buffer[2]));
+    self.calibration.dig_T3 = @bitCast((@as(u16, buffer[5]) << 8) | @as(u16, buffer[4]));
     self.calibration.dig_P1 = (@as(u16, buffer[7]) << 8) | @as(u16, buffer[6]);
-    self.calibration.dig_P2 = (@as(i16, buffer[9]) << 8) | @as(i16, buffer[8]);
-    self.calibration.dig_P3 = (@as(i16, buffer[11]) << 8) | @as(i16, buffer[10]);
-    self.calibration.dig_P4 = (@as(i16, buffer[13]) << 8) | @as(i16, buffer[12]);
-    self.calibration.dig_P5 = (@as(i16, buffer[15]) << 8) | @as(i16, buffer[14]);
-    self.calibration.dig_P6 = (@as(i16, buffer[17]) << 8) | @as(i16, buffer[16]);
-    self.calibration.dig_P7 = (@as(i16, buffer[19]) << 8) | @as(i16, buffer[18]);
-    self.calibration.dig_P8 = (@as(i16, buffer[21]) << 8) | @as(i16, buffer[20]);
-    self.calibration.dig_P9 = (@as(i16, buffer[23]) << 8) | @as(i16, buffer[22]);
+    self.calibration.dig_P2 = @bitCast((@as(u16, buffer[9]) << 8) | @as(u16, buffer[8]));
+    self.calibration.dig_P3 = @bitCast((@as(u16, buffer[11]) << 8) | @as(u16, buffer[10]));
+    self.calibration.dig_P4 = @bitCast((@as(u16, buffer[13]) << 8) | @as(u16, buffer[12]));
+    self.calibration.dig_P5 = @bitCast((@as(u16, buffer[15]) << 8) | @as(u16, buffer[14]));
+    self.calibration.dig_P6 = @bitCast((@as(u16, buffer[17]) << 8) | @as(u16, buffer[16]));
+    self.calibration.dig_P7 = @bitCast((@as(u16, buffer[19]) << 8) | @as(u16, buffer[18]));
+    self.calibration.dig_P8 = @bitCast((@as(u16, buffer[21]) << 8) | @as(u16, buffer[20]));
+    self.calibration.dig_P9 = @bitCast((@as(u16, buffer[23]) << 8) | @as(u16, buffer[22]));
 
     reg_addr = @intFromPtr(&registers.dig_H1);
     self.read_func.?(reg_addr, buffer[0..1]);
