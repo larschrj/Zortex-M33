@@ -144,13 +144,18 @@ const Scb = extern struct {
         // create Vectactive from Exceptionnumber and add 0 value for thread_mode
         const VectActive = blk: {
             const enumTypeInfo = @typeInfo(ExceptionNumber).@"enum";
-            var newFields: [enumTypeInfo.fields.len + 1]std.builtin.Type.EnumField = undefined;
-            for (enumTypeInfo.fields, 0..) |f, i| {
-                newFields[i] = .{ .name = f.name, .value = f.value + 16 };
+
+            var new_field_names: [enumTypeInfo.fields.len + 1][]const u8 = undefined;
+            var new_field_values: [enumTypeInfo.fields.len + 1]enumTypeInfo.tag_type = undefined;
+            new_field_names[0] = "thread_mode";
+            new_field_values[0] = 0;
+            for (enumTypeInfo.fields, 1..) |field, i| {
+                new_field_names[i] = field.name;
+                new_field_values[i] = field.value;
+                std.debug.print("{s}", .{field.name});
             }
-            newFields[newFields.len - 1] = .{ .name = "thread_mode", .value = 0 };
-            const enumInfo = std.builtin.Type.Enum{ .tag_type = u9, .fields = &newFields, .decls = &.{}, .is_exhaustive = false };
-            break :blk @Type(.{ .@"enum" = enumInfo });
+
+            break :blk @Enum(enumTypeInfo.tag_type, .exhaustive, new_field_names, new_field_values);
         };
 
         const RetToBase = enum(u1) {
@@ -161,13 +166,18 @@ const Scb = extern struct {
         // create Vectpending from Exceptionnumber and add 0 value for no pending interrupt
         const VectPending = blk: {
             const enumTypeInfo = @typeInfo(ExceptionNumber).@"enum";
-            var newFields: [enumTypeInfo.fields.len + 1]std.builtin.Type.EnumField = undefined;
-            for (enumTypeInfo.fields, 0..) |f, i| {
-                newFields[i] = .{ .name = f.name, .value = f.value + 16 };
+
+            var new_field_names: [enumTypeInfo.fields.len + 1][]const u8 = undefined;
+            var new_field_values: [enumTypeInfo.fields.len + 1]enumTypeInfo.tag_type = undefined;
+            new_field_names[0] = "no_pending_interrupt";
+            new_field_values[0] = 0;
+            for (enumTypeInfo.fields, 1..) |field, i| {
+                new_field_names[i] = field.name;
+                new_field_values[i] = field.value;
+                std.debug.print("{s}", .{field.name});
             }
-            newFields[newFields.len - 1] = .{ .name = "no_pending", .value = 0 };
-            const enumInfo = std.builtin.Type.Enum{ .tag_type = u9, .fields = &newFields, .decls = &.{}, .is_exhaustive = false };
-            break :blk @Type(.{ .@"enum" = enumInfo });
+
+            break :blk @Enum(enumTypeInfo.tag_type, .exhaustive, new_field_names, new_field_values);
         };
 
         const Isrpending = enum(u1) {
@@ -705,13 +715,6 @@ pub fn nvicDecodePriority(priorityEncoding: PriorityField) Priority {
     }
 
     return priority;
-}
-
-fn vectActiveType(comptime enumType: type, comptime newTagType: type) type {
-    const enum_type_info = @typeInfo(enumType);
-    var new_enum_type_info = enum_type_info;
-    new_enum_type_info.@"enum".tag_type = newTagType;
-    return @Type(new_enum_type_info);
 }
 
 // Check Prigroup values

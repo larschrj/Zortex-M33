@@ -73,51 +73,57 @@ pub const Irq = enum(i16) {
 
 // exception numbers = irq numbers + 16
 pub const ExceptionNumber = blk: {
-    const fields = std.meta.fields(Irq);
-    var new_fields: [fields.len]std.builtin.Type.EnumField = undefined;
-    for (fields, 0..) |f, i| {
-        new_fields[i] = .{ .name = f.name, .value = f.value + 16 };
+    const old_enum = @typeInfo(Irq).@"enum";
+    const len = old_enum.fields.len;
+    var new_enum_names: [len][]u8 = undefined;
+    var new_enum_values: [len]old_enum.tag_type = undefined;
+    for (old_enum.fields, 0..) |f, i| {
+        new_enum_names[i] = f.name;
+        new_enum_values[i] = f.value;
     }
-    const enum_info = std.builtin.Type.Enum{ .tag_type = u8, .fields = &new_fields, .decls = &.{}, .is_exhaustive = false };
-    break :blk @Type(.{ .@"enum" = enum_info });
+    break :blk @Enum(old_enum.tag_type, .exhaustive, new_enum_names, &new_enum_values);
 };
 
 // irq with configurable priority
 pub const IrqConfigurablePriority = blk: {
-    const fields = std.meta.fields(Irq);
+    const old_enum = @typeInfo(Irq).@"enum";
     var no_of_new_fields: u16 = 0;
-    for (fields) |f| {
+    for (old_enum.fields) |f| {
         no_of_new_fields += if (f.value > -13) 1 else 0;
     }
-    var new_fields: [no_of_new_fields]std.builtin.Type.EnumField = undefined;
+    var new_field_names: [no_of_new_fields][]u8 = undefined;
+    var new_field_values: [no_of_new_fields]old_enum.tag_type = undefined;
+
     var i: u16 = 0;
-    for (fields) |f| {
+    for (old_enum.fields) |f| {
         if (f.value > -13) {
-            new_fields[i] = .{ .name = f.name, .value = f.value };
+            new_field_names[i] = f.name;
+            new_field_values[i] = f.values;
             i += 1;
         }
     }
-    const enum_info = std.builtin.Type.Enum{ .tag_type = i16, .fields = &new_fields, .decls = &.{}, .is_exhaustive = false };
-    break :blk @Type(.{ .@"enum" = enum_info });
+    break :blk @Enum(old_enum.tag_type, .exhaustive, new_field_names, new_field_values);
 };
 
 // irq enabled in nvic
 pub const NvicIrq = blk: {
-    const fields = std.meta.fields(Irq);
+    const old_enum = @typeInfo(Irq).@"enum";
     var no_of_new_fields: u16 = 0;
-    for (fields) |f| {
+    for (old_enum.fields) |f| {
         no_of_new_fields += if (f.value >= 0) 1 else 0;
     }
-    var new_fields: [no_of_new_fields]std.builtin.Type.EnumField = undefined;
+    var new_field_names: [no_of_new_fields][]u8 = undefined;
+    var new_field_values: [no_of_new_fields]old_enum.tag_type = undefined;
+
     var i: u16 = 0;
-    for (fields) |f| {
+    for (old_enum.fields) |f| {
         if (f.value >= 0) {
-            new_fields[i] = .{ .name = f.name, .value = f.value };
+            new_field_names[i] = f.name;
+            new_field_values[i] = f.value;
             i += 1;
         }
     }
-    const enum_info = std.builtin.Type.Enum{ .tag_type = u16, .fields = &new_fields, .decls = &.{}, .is_exhaustive = false };
-    break :blk @Type(.{ .@"enum" = enum_info });
+    break :blk @Enum(old_enum.tag_type, .exhaustive, new_field_names, new_field_values);
 };
 
 // Check IRQ numbers

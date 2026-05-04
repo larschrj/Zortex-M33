@@ -107,44 +107,44 @@ pub const Cordic = packed struct {
         q3p29 = 2,
     };
 
-    pub const CosSin16Bit = packed struct {
+    pub const CosSin16Bit = packed struct(u32) {
         cos: i16,
         sin: i16,
     };
 
-    pub const CosSin32Bit = packed struct {
+    pub const CosSin32Bit = packed struct(u64) {
         cos: i32,
         sin: i32,
     };
 
-    pub const CoshSinh16Bit = packed struct {
-        cosh: packed struct {
+    pub const CoshSinh16Bit = struct {
+        cosh: struct {
             value: i16,
             fp: FixedPoint16Bit,
         },
-        sinh: packed struct {
+        sinh: struct {
             value: i16,
             fp: FixedPoint16Bit,
         },
     };
 
-    pub const CoshSinh32Bit = packed struct {
-        cosh: packed struct {
+    pub const CoshSinh32Bit = struct {
+        cosh: struct {
             value: i32,
             fp: FixedPoint32Bit,
         },
-        sinh: packed struct {
+        sinh: struct {
             value: i32,
             fp: FixedPoint32Bit,
         },
     };
 
-    pub const Exp16Bit = packed struct {
+    pub const Exp16Bit = struct {
         value: i16,
         fp: FixedPoint16Bit,
     };
 
-    pub const Exp32Bit = packed struct {
+    pub const Exp32Bit = struct {
         value: i32,
         fp: FixedPoint32Bit,
     };
