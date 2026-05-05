@@ -5,10 +5,10 @@ const cordic = @import("stm32u585xx").cordic;
 
 export const x: i16 = 0x7fff; // 0.25 q1.15 format
 export const m: i16 = 0x4000; // 0.5 q1.15 format
-export var cs16: Cordic.CosSin16Bit = undefined;
-export var cs32: Cordic.CosSin32Bit = undefined;
-export var chsh16: Cordic.CoshSinh16Bit = undefined;
-export var e16: Cordic.Exp16Bit = undefined;
+var cs16: Cordic.CosSin16Bit = undefined;
+var cs32: Cordic.CosSin32Bit = undefined;
+var chsh16: Cordic.CoshSinh16Bit = undefined;
+var e16: Cordic.Exp16Bit = undefined;
 
 export var a: i32 = undefined;
 
