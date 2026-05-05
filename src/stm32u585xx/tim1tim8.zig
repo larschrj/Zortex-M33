@@ -1,8 +1,8 @@
 pub const Tim1Tim8 = packed struct {
-    cr1: u32, // TIM control register 1,                   Address offset: 0x00
-    cr2: u32, // TIM control register 2,                   Address offset: 0x04
-    smcr: u32, // TIM slave mode control register,          Address offset: 0x08
-    dier: u32, // TIM DMA/interrupt enable register,        Address offset: 0x0C
+    cr1: Cr1, // TIM control register 1,                   Address offset: 0x00
+    cr2: Cr2, // TIM control register 2,                   Address offset: 0x04
+    smcr: Smcr, // TIM slave mode control register,          Address offset: 0x08
+    dier: Dier, // TIM DMA/interrupt enable register,        Address offset: 0x0C
     sr: u32, // TIM status register,                      Address offset: 0x10
     egr: u32, // TIM event generation register,            Address offset: 0x14
     ccmr1: u32, // TIM capture/compare mode register 1,      Address offset: 0x18
@@ -29,4 +29,86 @@ pub const Tim1Tim8 = packed struct {
     _reserved0: [220]u32, // Reserved,                               Address offset: 0x6C
     dcr: u32, // TIM DMA control register,                 Address offset: 0x3DC
     dmar: u32, // TIM DMA address for full transfer,        Address offset: 0x3E0
+
+    pub const Cr1 = packed struct(u32) {
+        cen: u1, // Counter enable
+        udis: u1, // Update Disable
+        urs: u1, // Update request source
+        opm: u1, // One-pulse mode
+        dir: u1, // Direction
+        cms: u2, // Center-aligned mode Selection
+        arpe: u1, // Autoreload preload enable
+        ckd: u2, // Clock division
+        _reserved0: u1, // Reserved
+        uifremap: u1, // UIF status bit remapping
+        dithen: u1, // Dithering enable
+        _reserved1: u19, // Reserved
+    };
+
+    pub const Cr2 = packed struct(u32) {
+        ccpc: u1, // Capture/compare preloaded control
+        _reserved0: u1,
+        ccus: u1, // Capture/compare control update selection
+        ccds: u1, // Capture/compare DMA selection
+        mms_0: u3, // Master mode selection
+        ti1s: u1, // tim_ti1 selection
+        ois1: u1, // Output idle state 1 (tim_oc1 output)
+        ois1n: u1, // Output idle state 1 (tim_oc1n output)
+        ois2: u1, // Output idle state 2 (tim_oc2 output)
+        ois2n: u1, // Output idle state 2 (tim_oc2n output)
+        ois3: u1, // Output idle state 3 (tim_oc3 output)
+        ois3n: u1, // Output idle state 3 (tim_oc3n output)
+        ois4: u1, // Output idle state 4 (tim_oc4 output)
+        ois4n: u1, // Output idle state 4 (tim_oc4n output)
+        ois5: u1, // Output idle state 5 (tim_oc5 output)
+        _reserved1: u1,
+        ois6: u1, // Output idle state 6 (tim_oc6 output)
+        _reserved2: u1,
+        mms2: u4, // Master mode selection 2
+        _reserved3: u1,
+        mms_1: u1, // Master mode selection
+        _reserved4: u6,
+    };
+
+    pub const Smcr = packed struct(u32) {
+        sms_0: u3, // Slave mode selection
+        occs: u1, // OCREF clear selection
+        ts_0: u3, // Trigger selection
+        msm: u1, // Master/slave mode
+        etf: u4, // External trigger filter
+        etps: u2, // External trigger prescaler
+        ece: u1, // External clock enable
+        etp: u1, // External trigger polarity
+        sms_1: u1, // Slave mode selection
+        _reserved0: u3,
+        ts_1: u2, // Trigger selection
+        _reserved1: u2,
+        smspe: u1, // SMS preload enable
+        smsps: u1, // SMS preload source
+        _reserved2: u6,
+    };
+
+    pub const Dier = packed struct(u32) {
+        uie: u1, // Update interrup enable
+        cc1ie: u1, // Capture/compare 1 interrupt enable
+        cc2ie: u1, // Capture/compare 2 interrupt enable
+        cc3ie: u1, // Capture/compare 3 interrupt enable
+        cc4ie: u1, // Capture/compare 4 interrupt enable
+        comie: u1, // COM interrupt enable
+        tie: u1, // Trigger interrupt enable
+        bie: u1, // Break interrupt enable
+        ude: u1, // Update DMA request enable
+        cc1de: u1, // Capture/compare 1 DMA request enable
+        cc2de: u1, // Capture/compare 2 DMA request enable
+        cc3de: u1, // Capture/compare 3 DMA request enable
+        cc4de: u1, // Capture/compare 4 DMA request enable
+        comde: u1, // COM DMA request enable
+        tde: u1, // Trigger DMA request enable
+        _reserved0: u5,
+        idxie: u1, // Index interrupt enable
+        dirie: u1, // Direction change interrupt enable
+        ierrie: u1, // Index error interrupt enable
+        terrie: u1, // Transition error interrupt enable
+        _reserved1: u8,
+    };
 };
