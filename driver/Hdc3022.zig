@@ -149,7 +149,7 @@ pub fn setMode(self: *Hdc3022, measurement_mode: MeasurementMode, low_power_mode
     self.write_func.?(self.addr, &transmit_buffer, true, true, false) catch {};
 }
 
-// Get sensor ADC values
+// Get sensor temperature and humidity ADC values
 pub fn getAdc(self: *Hdc3022) Error!Adc {
     const transmit_buffer: [2]u8 = switch (self.measurement_mode) {
         .single => .{ 0x24, 0x00 },
@@ -183,6 +183,7 @@ pub fn getStatus(self: *Hdc3022) Error!Status {
 
 // Get temperature and relative humidity reading
 // Temperature in degC in Q25.7 signed fixed point format
+// Relative humidity in % in UQ16.16 fixed point format
 pub fn getSensor(self: *Hdc3022) Error!Sensor {
     const adc = try getAdc(self);
     var sensor: Sensor = undefined;
