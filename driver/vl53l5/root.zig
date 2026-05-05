@@ -1,10 +1,8 @@
 const Vl53l5 = @This();
+const firmware = @import("firmware.zig");
 
 pub const I2c_addr = enum(u8) {
-    @"0x44" = 0x44,
-    @"0x45" = 0x45,
-    @"0x46" = 0x46,
-    @"0x47" = 0x47,
+    @"0x29" = 0x29,
 };
 
 pub const Error = error{
@@ -12,17 +10,24 @@ pub const Error = error{
     BusError,
     ArbitrationLost,
     NotAcknowledge,
-    MeasurementNotReady,
 };
 
-const ReadFunc = ?*const fn (addr: u10, receive_data: []u8, start: bool, stop: bool, reload: bool) Error!void;
-const WriteFunc = ?*const fn (addr: u10, transmit_data: []const u8, start: bool, stop: bool, reload: bool) Error!void;
+const ReadFunc = ?*const fn (register_address: u16, register_data: []u8) Error!void;
+const WriteFunc = ?*const fn (register_address: u16, register_data: []u8) Error!void;
 
 init: bool = false,
-addr: u8 = undefined,
+addr: u8 = I2c_addr.@"0x29",
 read_func: ReadFunc = null,
 write_func: WriteFunc = null,
-measurement_mode: MeasurementMode = undefined,
-low_power_mode: LowPowerMode = undefined,
 
-pub fn initialize() void {}
+pub fn initialize(self: Vl53l5) Error!void {
+    var receive_buffer: [1]u8 = undefined;
+
+    // SW reboot sequence
+    try self.write_func(0x7fff, &.{0x00});
+    try self.write_func(0x0009, &.{0x04});
+    try self.write_func(0x000F, &.{0x40});
+    try self.write_func(0x000A, &.{0x03});
+    try self.read_func(0x7fff, &receive_buffer);
+    try self.write_func(0x000c, &.{0x01});
+}
