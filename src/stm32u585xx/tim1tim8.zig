@@ -23,8 +23,8 @@ pub const Tim1Tim8 = packed struct {
     _reserved5: u12,
     ccr4: u20, // TIM capture/compare register 4,           Address offset: 0x40
     _reserved6: u12,
-    bdtr: u32, // TIM break and dead-time register,         Address offset: 0x44
-    ccr5: u32, // TIM capture/compare register 5,           Address offset: 0x48
+    bdtr: Bdtr, // TIM break and dead-time register,         Address offset: 0x44
+    ccr5: Ccr5, // TIM capture/compare register 5,           Address offset: 0x48
     ccr6: u32, // TIM capture/compare register 6,           Address offset: 0x4C
     ccmr3: u32, // TIM capture/compare mode register 3,      Address offset: 0x50
     dtr2: u32, // TIM deadtime register 2,                  Address offset: 0x54
@@ -253,5 +253,48 @@ pub const Tim1Tim8 = packed struct {
         uifcpy: u1, // UIF copy
     };
 
-    pub const Arr = packed struct(u32) {};
+    pub const Bdtr = packed struct(u32) {
+        dtg: u8, // Dead-time generator setup
+        lock: u2, // Lock configuration
+        ossi: u1, // Off-state selection for idle mode
+        ossr: u1, // Off-state selection for run mode
+        bke: u1, // Break enable
+        bkp: u1, // Break polarity
+        aoe: u1, // Automatic output enable
+        moe: u1, // Main output enable
+        bkf: u4, // Break filter
+        bk2f: u4, // Break 2 filter
+        bk2e: u1, // Break 2 enable
+        bk2p: u1, // Break 2 polarity
+        bkdsrm: u1, // Break disarm
+        bk2dsrm: u1, // Break 2 disarm
+        bkbid: u1, // Break bidirectional
+        bk2bid: u1, // Break2 bidirectional
+        _reserved0: u2,
+    };
+
+    pub const Ccr5 = packed struct(u32) {
+        ccr5: u20,
+        _reserved0: u9,
+        gc5c1: u1,
+        gc5c2: u1,
+        gc5c3: u1,
+    };
+
+    pub const Ccmr3 = packed struct(u32) {
+        _reserved0: u2,
+        oc5fe: u1,
+        oc5pe: u1,
+        oc5m_0: u3,
+        oc5ce: u1,
+        _reserved1: u2,
+        oc6fe: u1,
+        oc6pe: u1,
+        oc6m_0: u3,
+        oc6ce: u1,
+        oc5m_1: u1,
+        _reserved2: u7,
+        oc6m_1: u1,
+        _reserved3: u7,
+    };
 };
