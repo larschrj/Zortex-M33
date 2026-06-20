@@ -25,16 +25,16 @@ pub const Tim1Tim8 = packed struct {
     _reserved6: u12,
     bdtr: Bdtr, // TIM break and dead-time register,         Address offset: 0x44
     ccr5: Ccr5, // TIM capture/compare register 5,           Address offset: 0x48
-    ccr6: u32, // TIM capture/compare register 6,           Address offset: 0x4C
-    ccmr3: u32, // TIM capture/compare mode register 3,      Address offset: 0x50
-    dtr2: u32, // TIM deadtime register 2,                  Address offset: 0x54
-    ecr: u32, // TIM encoder control register,             Address offset: 0x58
-    tisel: u32, // TIM Input Selection register,             Address offset: 0x5C
-    af1: u32, // TIM alternate function option register 1, Address offset: 0x60
-    af2: u32, // TIM alternate function option register 2, Address offset: 0x64
-    or1: u32, // TIM option register,                      Address offset: 0x68
-    _reserved7: [220]u32, // Reserved,                               Address offset: 0x6C
-    dcr: u32, // TIM DMA control register,                 Address offset: 0x3DC
+    ccr6: u20, // TIM capture/compare register 6,           Address offset: 0x4C
+    _reserved7: u12,
+    ccmr3: Ccmr3, // TIM capture/compare mode register 3,      Address offset: 0x50
+    dtr2: Dtr2, // TIM deadtime register 2,                  Address offset: 0x54
+    ecr: Ecr, // TIM encoder control register,             Address offset: 0x58
+    tisel: Tisel, // TIM Input Selection register,             Address offset: 0x5C
+    af1: Af1, // TIM alternate function option register 1, Address offset: 0x60
+    af2: Af2, // TIM alternate function option register 2, Address offset: 0x64
+    _reserved8: [221]u32, // Reserved,                               Address offset: 0x6C
+    dcr: Dcr, // TIM DMA control register,                 Address offset: 0x3DC
     dmar: u32, // TIM DMA address for full transfer,        Address offset: 0x3E0
 
     pub const Cr1 = packed struct(u32) {
@@ -274,27 +274,106 @@ pub const Tim1Tim8 = packed struct {
     };
 
     pub const Ccr5 = packed struct(u32) {
-        ccr5: u20,
+        ccr5: u20, // Capture/compare 5 value
         _reserved0: u9,
-        gc5c1: u1,
-        gc5c2: u1,
-        gc5c3: u1,
+        gc5c1: u1, // Group channel 5 and channel 1
+        gc5c2: u1, // Group channel 5 and channel 2
+        gc5c3: u1, // Group channel 5 and channel 3
     };
 
     pub const Ccmr3 = packed struct(u32) {
         _reserved0: u2,
-        oc5fe: u1,
-        oc5pe: u1,
-        oc5m_0: u3,
-        oc5ce: u1,
+        oc5fe: u1, // Output compare 5 fast enable
+        oc5pe: u1, // Output compare 5 preload enable
+        oc5m_0: u3, // Output compare 5 mode
+        oc5ce: u1, // Output compare 5 clear enable
         _reserved1: u2,
-        oc6fe: u1,
-        oc6pe: u1,
-        oc6m_0: u3,
-        oc6ce: u1,
-        oc5m_1: u1,
+        oc6fe: u1, // Output compare 6 fast enable
+        oc6pe: u1, // Output compare 6 preload enable
+        oc6m_0: u3, // Output compare 6 mode
+        oc6ce: u1, // Output compare 6 clear enable
+        oc5m_1: u1, // Output compare 5 mode
         _reserved2: u7,
-        oc6m_1: u1,
+        oc6m_1: u1, // Output compare 6 mode
         _reserved3: u7,
+    };
+
+    pub const Dtr2 = packed struct(u32) {
+        dtgf: u8, // Dead-time falling edge generator setup
+        _reserved0: u8,
+        dtae: u1, // Deadtime asymmetric enable
+        dtpe: u1, // Deadtime preload enable
+        _reserved1: u14,
+    };
+
+    pub const Ecr = packed struct(u32) {
+        ie: u1, // Index enable
+        idir: u2, // Index Direction
+        iblk: u2, // Index blanking
+        fidx: u1, // First Index
+        ipos: u2, // Index positioning
+        _reserved0: u8,
+        pw: u8, // Pulse width
+        pwprsc: u3, // Pulse width prescaler
+        _reserved1: u5,
+    };
+
+    pub const Tisel = packed struct(u32) {
+        ti1sel: u4, // Selects tim_ti1[15:0] input
+        _reserved0: u4,
+        ti2sel: u4, // Selects tim_ti2[15:0] input
+        _reserved2: u4,
+        ti3sel: u4, // Selects tim_ti3[15:0] input
+        _reserved3: u4,
+        ti4sel: u4, // Selects tim_ti4[15:0] input
+        _reserved4: u4,
+    };
+
+    pub const Af1 = packed struct(u32) {
+        bkine: u1, // TIMx_BKIN input enable
+        bkcmp1e: u1, // tim_brk_cmp1 enable
+        bkcmp2e: u1, // tim_brk_cmp2 enable
+        bkcmp3e: u1, // tim_brk_cmp3 enable
+        bkcmp4e: u1, // tim_brk_cmp4 enable
+        bkcmp5e: u1, // tim_brk_cmp5 enable
+        bkcmp6e: u1, // tim_brk_cmp6 enable
+        bkcmp7e: u1, // tim_brk_cmp7 enable
+        bkcmp8e: u1, // tim_brk_cmp8 enable
+        bkinp: u1, // TIMx_BKIN input polarity
+        bkcmp1p: u1, // tim_brk_cmp1 input polarity
+        bkcmp2p: u1, // tim_brk_cmp2 input polarity
+        bkcmp3p: u1, // tim_brk_cmp3 input polarity
+        bkcmp4p: u1, // tim_brk_cmp4 input polarity
+        etrsel: u4, // etr_in source selection
+        _reserved0: u14,
+    };
+
+    pub const Af2 = packed struct(u32) {
+        bk2ine: u1, // TIMx_BKIN2 input enable
+        bk2cmp1e: u1, // tim_brk2_cmp1 enable
+        bk2cmp2e: u1, // tim_brk2_cmp2 enable
+        bk2cmp3e: u1, // tim_brk2_cmp3 enable
+        bk2cmp4e: u1, // tim_brk2_cmp4 enable
+        bk2cmp5e: u1, // tim_brk2_cmp5 enable
+        bk2cmp6e: u1, // tim_brk2_cmp6 enable
+        bk2cmp7e: u1, // tim_brk2_cmp7 enable
+        bk2cmp8e: u1, // tim_brk2_cmp8 enable
+        bk2inp: u1, // TIMx_BKIN2 input polarity
+        bk2cmp1p: u1, // tim_brk2_cmp1 input polarity
+        bk2cmp2p: u1, // tim_brk2_cmp2 input polarity
+        bk2cmp3p: u1, // tim_brk2_cmp3 input polarity
+        bk2cmp4p: u1, // tim_brk2_cmp4 input polarity
+        _reserved0: u2,
+        ocrsel: u3, // ocref_clr source selection
+        _reserved1: u13,
+    };
+
+    pub const Dcr = packed struct(u32) {
+        dba: u5, // DMA base address
+        _reserved0: u3,
+        dbl: u5, // DMA burst length
+        _reserved1: u3,
+        dbss: u4, // DMA burst source selection
+        _reserved2: u21,
     };
 };
