@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const Tim1Tim8 = packed struct {
     cr1: Cr1, // TIM control register 1,                   Address offset: 0x00
     cr2: Cr2, // TIM control register 2,                   Address offset: 0x04
@@ -376,4 +378,28 @@ pub const Tim1Tim8 = packed struct {
         dbss: u4, // DMA burst source selection
         _reserved2: u21,
     };
+
+    pub const TimerError = error{
+        DelayTooLong,
+    };
+
+    pub fn waitTicks(self: *@This(), ticks: u16) TimerError!void {
+        const max_allowed = std.math.maxInt(u16) - 1;
+        if (ticks > max_allowed) {
+            return TimerError.DelayTooLong;
+        }
+
+        const start = self.cnt.cnt;
+        while (true) {
+            const current = self.cnt.cnt;
+            const elapsed = start -% current;
+            if (elapsed >= ticks) {
+                break;
+            } else {
+                asm volatile (
+                    \\nop
+                );
+            }
+        }
+    }
 };
