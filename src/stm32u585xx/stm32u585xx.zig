@@ -1,4 +1,5 @@
 pub const core_cm33 = @import("core_cm33");
+pub const Tim2tim5 = @import("tim2tim5.zig").Tim2tim5;
 pub const I2c = @import("i2c.zig").I2c;
 pub const Tim1Tim8 = @import("tim1tim8.zig").Tim1Tim8;
 pub const Usart = @import("usart.zig").Usart;
@@ -15,6 +16,8 @@ pub const GpioI = @import("gpio.zig").GpioI;
 pub const Pwr = @import("pwr.zig").Pwr;
 pub const Rcc = @import("rcc.zig").Rcc;
 
+const tim2_base = 0x40000000;
+const tim5_base = 0x40000c00;
 const usart2_base = 0x40004400;
 const usart3_base = 0x40004800;
 const uart4_base = 0x40004c00;
@@ -38,10 +41,12 @@ const gpioi_base = 0x42022000;
 const pwr_base = 0x46020800;
 const rcc_base = 0x46020c00;
 
-pub const usart2: *volatile Usart = @ptrFromInt(0x40004400);
-pub const usart3: *volatile Usart = @ptrFromInt(0x40004800);
-pub const uart4: *volatile Usart = @ptrFromInt(0x40004c00);
-pub const uart5: *volatile Usart = @ptrFromInt(0x40005000);
+pub const tim2: *volatile Tim2tim5 = @ptrFromInt(tim2_base);
+pub const tim5: *volatile Tim2tim5 = @ptrFromInt(tim5_base);
+pub const usart2: *volatile Usart = @ptrFromInt(usart2_base);
+pub const usart3: *volatile Usart = @ptrFromInt(usart3_base);
+pub const uart4: *volatile Usart = @ptrFromInt(uart4_base);
+pub const uart5: *volatile Usart = @ptrFromInt(uart5_base);
 pub const i2c1: *volatile I2c = @ptrFromInt(i2c1_base);
 pub const i2c2: *volatile I2c = @ptrFromInt(i2c2_base);
 pub const i2c4: *volatile I2c = @ptrFromInt(i2c4_base);
