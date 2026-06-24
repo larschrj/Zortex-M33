@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const Tim1Tim8 = packed struct {
+pub const Tim1Tim8 = extern struct {
     cr1: Cr1, // TIM control register 1,                   Address offset: 0x00
     cr2: Cr2, // TIM control register 2,                   Address offset: 0x04
     smcr: Smcr, // TIM slave mode control register,          Address offset: 0x08
@@ -11,24 +11,16 @@ pub const Tim1Tim8 = packed struct {
     ccmr2: Ccmr2, // TIM capture/compare mode register 2,      Address offset: 0x1C
     ccer: Ccer, // TIM capture/compare enable register,      Address offset: 0x20
     cnt: Cnt, // TIM counter register,                     Address offset: 0x24
-    psc: u16, // TIM prescaler,                            Address offset: 0x28
-    _reserved0: u16,
-    arr: u20, // TIM auto-reload register,                 Address offset: 0x2C
-    _reserved1: u12,
-    rcr: u16, // TIM repetition counter register,          Address offset: 0x30
-    _reserved2: u16,
-    ccr1: u20, // TIM capture/compare register 1,           Address offset: 0x34
-    _reserved3: u12,
-    ccr2: u20, // TIM capture/compare register 2,           Address offset: 0x38
-    _reserved4: u12,
-    ccr3: u20, // TIM capture/compare register 3,           Address offset: 0x3C
-    _reserved5: u12,
-    ccr4: u20, // TIM capture/compare register 4,           Address offset: 0x40
-    _reserved6: u12,
+    psc: Psc, // TIM prescaler,                            Address offset: 0x28
+    arr: Arr, // TIM auto-reload register,                 Address offset: 0x2C
+    rcr: Rcr, // TIM repetition counter register,          Address offset: 0x30
+    ccr1: Ccr1, // TIM capture/compare register 1,           Address offset: 0x34
+    ccr2: Ccr2, // TIM capture/compare register 2,           Address offset: 0x38
+    ccr3: Ccr3, // TIM capture/compare register 3,           Address offset: 0x3C
+    ccr4: Ccr4, // TIM capture/compare register 4,           Address offset: 0x40
     bdtr: Bdtr, // TIM break and dead-time register,         Address offset: 0x44
     ccr5: Ccr5, // TIM capture/compare register 5,           Address offset: 0x48
-    ccr6: u20, // TIM capture/compare register 6,           Address offset: 0x4C
-    _reserved7: u12,
+    ccr6: Ccr6, // TIM capture/compare register 6,           Address offset: 0x4C
     ccmr3: Ccmr3, // TIM capture/compare mode register 3,      Address offset: 0x50
     dtr2: Dtr2, // TIM deadtime register 2,                  Address offset: 0x54
     ecr: Ecr, // TIM encoder control register,             Address offset: 0x58
@@ -255,6 +247,41 @@ pub const Tim1Tim8 = packed struct {
         uifcpy: u1, // UIF copy
     };
 
+    pub const Psc = packed struct(u32) {
+        psc: u16,
+        _reserved0: u16,
+    };
+
+    pub const Arr = packed struct(u32) {
+        arr: u20,
+        _reserved0: u12,
+    };
+
+    pub const Rcr = packed struct {
+        rcr: u16,
+        _reserved0: u16,
+    };
+
+    pub const Ccr1 = packed struct {
+        ccr1: u20,
+        _reserved0: u12,
+    };
+
+    pub const Ccr2 = packed struct {
+        ccr2: u20,
+        _reserved0: u12,
+    };
+
+    pub const Ccr3 = packed struct {
+        ccr3: u20,
+        _reserved0: u12,
+    };
+
+    pub const Ccr4 = packed struct {
+        ccr4: u20,
+        _reserved0: u12,
+    };
+
     pub const Bdtr = packed struct(u32) {
         dtg: u8, // Dead-time generator setup
         lock: u2, // Lock configuration
@@ -281,6 +308,11 @@ pub const Tim1Tim8 = packed struct {
         gc5c1: u1, // Group channel 5 and channel 1
         gc5c2: u1, // Group channel 5 and channel 2
         gc5c3: u1, // Group channel 5 and channel 3
+    };
+
+    pub const Ccr6 = packed struct {
+        ccr6: u20,
+        _reserved0: u12,
     };
 
     pub const Ccmr3 = packed struct(u32) {

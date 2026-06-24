@@ -14,11 +14,13 @@ pub const Error = error{
 
 const ReadFunc = ?*const fn (register_address: u16, register_data: []u8) Error!void;
 const WriteFunc = ?*const fn (register_address: u16, register_data: []u8) Error!void;
+const WaitFunc = ?*const fn (msec: u16) void;
 
 init: bool = false,
 addr: u8 = I2c_addr.@"0x29",
 read_func: ReadFunc = null,
 write_func: WriteFunc = null,
+wait_func: WaitFunc = null,
 
 pub fn initialize(self: Vl53l5) Error!void {
     var receive_buffer: [1]u8 = undefined;
