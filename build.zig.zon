@@ -1,0 +1,19 @@
+.{
+    .name = .zortex_m33,
+    .version = "0.1.0",
+    .fingerprint = 0x7e2827c1fc85ae43,
+    .dependencies = .{
+        .@"lu-solver" = .{
+            // A remote URL is required for others to clone successfully
+            .url = "git+https://github.com/larschrj/lu-solver.git#b9fc41e8adb41f18e02bb139669141cc589a582d",
+            .hash = "lu_solver-0.0.1-WY2FjGcRAAAMXyk2JtYicd7eg4k2egADJfivM3kgaj3b",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "driver",
+        "examples",
+    },
+}
