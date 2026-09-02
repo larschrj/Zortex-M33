@@ -5,8 +5,8 @@
     .dependencies = .{
         .@"lu-solver" = .{
             // A remote URL is required for others to clone successfully
-            .url = "git+https://github.com/larschrj/lu-solver.git#b9fc41e8adb41f18e02bb139669141cc589a582d",
-            .hash = "lu_solver-0.0.1-WY2FjGcRAAAMXyk2JtYicd7eg4k2egADJfivM3kgaj3b",
+            .url = "git+https://github.com/larschrj/micro-linalg#b1c3e97e2f7bf001268971a5b686c25b1c792fd5",
+            .hash = "micro_linalg-0.0.1-s5RFUOMfAAAYl-2w8QOhqFIS0UWGKMQDh5qAv6fUJplX",
         },
     },
     .paths = .{
