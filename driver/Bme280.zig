@@ -199,7 +199,7 @@ adc: Adc = .{},
 temp_fine: i32 = 0,
 
 pub fn readCalibration(self: *Bme280) void {
-    var buffer: [24]u8 = .{0} ** 24;
+    var buffer: [24]u8 = @splat(0);
     var reg_addr: u8 = 0;
 
     reg_addr = @intFromPtr(&registers.dig_T1);

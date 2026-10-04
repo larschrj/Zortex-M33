@@ -31,7 +31,7 @@ pub fn SysTick_Handler() callconv(.c) void {
     // Transmit temperature on usart1 if available
     const sensor = main.hdc3022.getSensor();
     if (sensor) |s| {
-        var buffer = [_]u8{' '} ** 14;
+        var buffer: [14]u8 = @splat(' ');
         const temp_string = main.q32p7ToString(&buffer, s.temp) catch unreachable;
         main.usart1.transmitPolling("Temperature = ");
         main.usart1.transmitPolling(temp_string);

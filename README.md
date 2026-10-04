@@ -3,7 +3,7 @@ Minimal bare metal Zig for Arm Cortex-M33 using [STM32U585AI](https://www.st.com
 
 Inspired by and builds on the [embedded_zig](https://github.com/tralamazza/embedded_zig) project.
 
-Tested with Zig v0.16.x.
+Requires Zig v0.17.x.
 
 ## Getting Started
 

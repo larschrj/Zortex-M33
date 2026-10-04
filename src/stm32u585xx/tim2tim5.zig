@@ -2,7 +2,7 @@ pub const Tim2tim5 = extern struct {
     cr1: Cr1, // TIMx control register 1, Address offset 0x000
     cr2: Cr1, // TIMx control register 2, Address offset 0x004
     smcr: Smcr, // TIMx , Address offset 0x008
-    dier: u32, // TIMx , Address offset 0x00c
+    dier: Dier, // TIMx , Address offset 0x00c
     sr: u32, // TIMx , Address offset 0x010
     egr: u32, // TIMx , Address offset 0x014
     ccmr1: u32, // TIMx , Address offset 0x018
@@ -66,5 +66,24 @@ pub const Tim2tim5 = extern struct {
         smspe: u1, // SMS preload source
         smsps: u1, // SMS preload enable
         _reserved2: u6,
+    };
+
+    pub const Dier = packed struct(u32) {
+        uie: u1, // Update interrupt enable
+        cc1ie: u1, // Capture/compare 1 interrupt enable
+        cc2ie: u1, // Capture/compare 2 interrupt enable
+        cc3ie: u1, // Capture/compare 3 interrupt enable
+        cc4ie: u1, // Capture/compare 4 interrupt enable
+        _reserved0: u1,
+        tie: u1, // Trigger interrupt enable
+        _reserved1: u1,
+        ude: u1, // Update DMA request enable
+        cc1de: u1, // Capture/Compare 1 DMA request enable
+        cc2de: u1, // Capture/Compare 2 DMA request enable
+        cc3de: u1, // Capture/Compare 3 DMA request enable
+        cc4de: u1, // Capture/Compare 4 DMA request enable
+        _reserved2: u1,
+        tde: u1, // Trigger DMA request enable
+        _reserved3: u5,
     };
 };

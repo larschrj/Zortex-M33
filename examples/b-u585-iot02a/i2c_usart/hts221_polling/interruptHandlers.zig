@@ -35,7 +35,7 @@ pub fn SysTick_Handler() callconv(.c) void {
     // Convert sensor data to strings
 
     // Transmit sensor data
-    var buffer = [_]u8{' '} ** 14;
+    var buffer: [14]u8 = @splat(' ');
     const temp_string = main.q32p3ToString(&buffer, sensor.temperature) catch unreachable;
     main.usart1.transmitPolling("Temperature = ");
     main.usart1.transmitPolling(temp_string);

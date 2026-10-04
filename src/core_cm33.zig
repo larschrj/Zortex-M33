@@ -720,9 +720,9 @@ pub fn nvicDecodePriority(priorityEncoding: PriorityField) Priority {
 // Check Prigroup values
 comptime {
     const prigroup_type_info = @typeInfo(Scb.Aircr.Prigroup).@"enum";
-    for (prigroup_type_info.fields) |field| {
-        if (field.value < nvic_priority_bit_size - 1) {
-            @compileError("Value of prigroup_t." ++ field.name ++ "less then nvicPriorityBitSize - 1");
+    for (prigroup_type_info.field_values, prigroup_type_info.field_names) |value, name| {
+        if (value < nvic_priority_bit_size - 1) {
+            @compileError("Value of prigroup_t." ++ name ++ "less then nvicPriorityBitSize - 1");
         }
     }
 }
